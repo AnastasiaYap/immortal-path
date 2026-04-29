@@ -159,7 +159,9 @@ function makeWorld() {
 function isSolidAt(world, px, py) {
   const tx = Math.floor(px / TILE);
   const ty = Math.floor(py / TILE);
-  if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return true;
+  const w = world.width || MAP_W;
+  const h = world.height || MAP_H;
+  if (tx < 0 || ty < 0 || tx >= w || ty >= h) return true;
   if (SOLID_TILES.has(world.tiles[ty][tx])) return true;
   for (const s of world.structures) {
     if (!s.solid) continue;
@@ -181,10 +183,12 @@ function drawTile(ctx, t, sx, sy) {
 }
 
 function drawWorld(ctx, world, cam) {
+  const w = world.width || MAP_W;
+  const h = world.height || MAP_H;
   const x0 = Math.max(0, Math.floor(cam.x / TILE));
   const y0 = Math.max(0, Math.floor(cam.y / TILE));
-  const x1 = Math.min(MAP_W, Math.ceil((cam.x + cam.w) / TILE) + 1);
-  const y1 = Math.min(MAP_H, Math.ceil((cam.y + cam.h) / TILE) + 1);
+  const x1 = Math.min(w, Math.ceil((cam.x + cam.w) / TILE) + 1);
+  const y1 = Math.min(h, Math.ceil((cam.y + cam.h) / TILE) + 1);
 
   // base tiles
   for (let y = y0; y < y1; y++) {

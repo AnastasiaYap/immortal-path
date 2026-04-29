@@ -30,7 +30,11 @@ Any modern browser works.
 | **M** | Meditate (must stand on the meditation mat) |
 | **R** | Attempt breakthrough (when cultivation full + qi >= 90%) |
 | **I** | Inventory, seed pouch & equipment slots |
-| **K** | Skills panel — see levels and active perks |
+| **K** | Skills panel — levels and active perks |
+| **J** | Quest log — active and completed quests |
+| **P** | Heart-meridian — spend stat points |
+| **V** | Sword-flight (Foundation Establishment+, drains qi) |
+| **T** | Tame a weakened beast / summon dao partner |
 | **C** | Craft (near desk, furnace, stove, forge, or loom) |
 | **B** | Build / upgrade |
 | **1** | Sleep (must be near the bed inside the house) |
@@ -128,9 +132,39 @@ phases out the cute foes as new horrors arrive.
 | 6 | **Young Dragon** *(boss)* | Day 50+. Coiled, scaled, breathing flame. |
 
 
+## Other Systems
+
+- **Save slots** — three independent saves on the title screen, with day,
+  realm, and money displayed. Continue / Restart / Delete.
+- **Weather** — daily roll of clear / rain / storm / snow / spirit-mist. Rain
+  and storms auto-water all your crops; storms boost cultivation gain and
+  occasionally spawn a thunder-touched beast; snow halts herb regrowth.
+- **Heart-meridian** — each breakthrough grants 3 stat points spendable on
+  +HP / +Qi / +Atk / +Def. Reset for a Qi Recovery Pill.
+- **Sword-flight** — at Foundation Establishment, press **V** to fly. 1.8x
+  speed, ignores terrain, drains qi while aloft.
+- **Quests** — talk to the elder (E on the merchant) for kill, gather,
+  and deliver tasks. Auto-tracked. Reputation accrues. The "Sworn Sister"
+  quest unlocks a dao-partner companion.
+- **Companions** — at most one. Dao partner (purple-robed cultivator) is
+  unlocked via quest. Spirit pets (rabbit/boar/wolf) are tamed by wounding
+  a beast below 25% HP and pressing **T** facing it. Companions follow,
+  fight, and full-heal each dawn.
+- **Beast nests / dungeons** — a cave entrance appears at a fresh forest
+  spot each dawn. Press **E** on it to enter an instanced 14×10 chamber
+  with three escalating waves and a chest at the end.
+- **Sect tournament** — at the merchant hub, pay 50 stones for three
+  escalating arena fights. Win to claim a tournament title and a stone purse.
+- **Decorations** — buy a Spirit Lantern, Sect Banner, Mini Koi Pond, or
+  Spirit Jade Rock at the market, then **Place** them from inventory inside
+  your home yard. Each grants a passive bonus (qi regen, combat XP, daily
+  +HP, breakthrough chance).
+
 ## Save System
 
-Auto-saves every 30 seconds and on tab close, to browser `localStorage`.
+Three save slots backed by browser `localStorage`. Autosaves every 30 seconds
+and on tab close, but never inside dungeons or arena fights (so you can't
+get stuck in instances).
 
 ## Project Layout
 

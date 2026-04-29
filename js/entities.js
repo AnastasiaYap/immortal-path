@@ -38,6 +38,41 @@ function makePlayer(spawn) {
 
     skills: makeFreshSkillBlock(),
     equipped: { weapon: null, robe: null, accessory: null },
+
+    // Heart-meridian / stat points
+    statPoints: 0,
+    bonusHpMax: 0, bonusQiMax: 0, bonusAtk: 0, // bonusDef already exists
+    statSpent: { hp: 0, qi: 0, atk: 0, def: 0 },
+
+    // Sword-flight
+    flying: false,
+
+    // Quests
+    activeQuests: [],
+    completedQuests: [],
+    questCounters: {}, // { rabbit_kills: 5, ... }
+    reputation: 0,
+
+    // Companion (single slot — partner OR pet)
+    hasPartnerUnlock: false,
+    title: null,
+
+    // Tournament titles ("Champion of the Outer Court")
+  };
+}
+
+function makeCompanion(type, x, y) {
+  const def = COMPANIONS[type];
+  return {
+    type,
+    def,
+    x, y, vx: 0, vy: 0,
+    hp: def.hp, hpMax: def.hp,
+    speed: def.speed,
+    dmg: def.dmg,
+    attackCooldown: 0,
+    animFrame: 0, animTimer: 0,
+    hitFlash: 0,
   };
 }
 
@@ -80,7 +115,19 @@ function makeFx(x, y, kind) {
 function drawPlayer_(ctx, player, cam) {
   const key = `player_${player.facing}_${player.animFrame}`;
   const spr = SpriteCache[key];
-  if (spr) ctx.drawImage(spr, player.x - cam.x - 16, player.y - cam.y - 24);
+  const liftY = player.flying ? -8 - Math.sin(performance.now() / 200) * 2 : 0;
+  if (player.flying) {
+    // sword wisp underfoot
+    ctx.fillStyle = "rgba(120, 200, 255, 0.5)";
+    ctx.beginPath();
+    ctx.ellipse(player.x - cam.x, player.y - cam.y - 2, 12, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(120, 200, 255, 0.25)";
+    ctx.beginPath();
+    ctx.ellipse(player.x - cam.x, player.y - cam.y + 2, 16, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (spr) ctx.drawImage(spr, player.x - cam.x - 16, player.y - cam.y - 24 + liftY);
   if (player.wardTimer > 0) {
     ctx.strokeStyle = `rgba(120, 200, 255, ${0.4 + 0.3 * Math.sin(performance.now() / 80)})`;
     ctx.lineWidth = 2;

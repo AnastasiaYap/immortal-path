@@ -18,6 +18,7 @@
     keysPressed: {},
     time: 30, // start at morning-ish
     day: 1,
+    weather: "clear",
     spawnTimer: 8,
     logQueue: [],
     modalOpen: false,
@@ -25,6 +26,10 @@
     isAlive: true,
     started: false,
     autosaveTimer: 30,
+    fishing: null,
+    weatherParticles: [],
+    dungeon: null,             // active dungeon instance, if any
+    tournament: null,          // active tournament state
   };
   window.GAME = state;
 
@@ -36,8 +41,14 @@
     state.fx = [];
     state.day = 1;
     state.time = 30;
+    state.weather = "clear";
     state.isAlive = true;
     state.started = true;
+    state.dungeon = null;
+    state.tournament = null;
+    state.companion = null;
+    refreshDungeonEntrance(state);
+    applyDecorationStanding(state.player, state);
     pushLog(state, "A new life begins. Walk well, child of the mountain.", "qi");
     pushLog(state, "Press Tab for help. Try tilling (E) the dirt plots near your hut.", "");
   }
@@ -63,11 +74,17 @@
     state.player = data.player;
     state.day = data.day;
     state.time = data.time;
+    state.weather = data.weather || "clear";
     state.beasts = [];
     state.projectiles = [];
     state.fx = [];
+    state.dungeon = null;
+    state.tournament = null;
+    state.companion = null;
     state.isAlive = state.player.hp > 0;
     state.started = true;
+    refreshDungeonEntrance(state);
+    applyDecorationStanding(state.player, state);
     pushLog(state, "Save loaded. Welcome back.", "good");
   }
 
@@ -107,27 +124,40 @@
     const moving = (dx !== 0 || dy !== 0);
     p.moving = moving;
 
+    // Flight: drain qi, ignore collisions, 1.8x speed.
+    if (p.flying) {
+      p.qi -= 4 * dt;
+      if (p.qi <= 0) {
+        p.qi = 0;
+        p.flying = false;
+        pushLog(state, "Qi exhausted — you drop from flight.", "bad");
+      }
+    }
+    const speedMul = p.flying ? 1.8 : 1;
+
     if (moving) {
       const len = Math.hypot(dx, dy);
       dx /= len; dy /= len;
-      // facing — prioritize horizontal if both
       if (Math.abs(dx) > Math.abs(dy)) p.facing = dx < 0 ? "left" : "right";
       else p.facing = dy < 0 ? "up" : "down";
 
-      const nx = p.x + dx * p.speed * dt;
-      const ny = p.y + dy * p.speed * dt;
-      // collide on each axis separately
-      if (!isSolidAt(state.world, nx, p.y) && !isSolidAt(state.world, nx, p.y + 8)) p.x = nx;
-      if (!isSolidAt(state.world, p.x, ny) && !isSolidAt(state.world, p.x, ny + 8)) p.y = ny;
+      const nx = p.x + dx * p.speed * speedMul * dt;
+      const ny = p.y + dy * p.speed * speedMul * dt;
+      if (p.flying) {
+        // Bound to map only.
+        p.x = Math.max(8, Math.min(MAP_W * TILE - 8, nx));
+        p.y = Math.max(8, Math.min(MAP_H * TILE - 8, ny));
+      } else {
+        if (!isSolidAt(state.world, nx, p.y) && !isSolidAt(state.world, nx, p.y + 8)) p.x = nx;
+        if (!isSolidAt(state.world, p.x, ny) && !isSolidAt(state.world, p.x, ny + 8)) p.y = ny;
+      }
 
       p.animTimer += dt;
       if (p.animTimer > 0.18) { p.animTimer = 0; p.animFrame = 1 - p.animFrame; }
-      // tiny stamina cost for sprinting (none for now)
     } else {
       p.animFrame = 0;
     }
 
-    // stamina recovery while idle
     if (!moving) {
       p.stamina = Math.min(p.staminaMax, p.stamina + 4 * dt);
     }
@@ -152,7 +182,16 @@
     }
     if (nearStruct) {
       switch (nearStruct.type) {
-        case "merchant": openShop(state); return;
+        case "merchant": openMerchantHub(state); return;
+        case "cave":
+          enterDungeon(state, nearStruct.dungeonId);
+          return;
+        case "decor":
+          pushLog(state, `${ITEMS[nearStruct.decor].name} — ${ITEMS[nearStruct.decor].desc}`, "");
+          return;
+        case "chest":
+          openDungeonChest(state);
+          return;
         case "desk":    openCraft(state, "desk"); return;
         case "furnace": openCraft(state, "furnace"); return;
         case "stove":   openCraft(state, "stove"); return;
@@ -351,6 +390,35 @@
     }
     if (state.keysPressed["i"]) openInventory(state);
     if (state.keysPressed["k"]) openSkills(state);
+    if (state.keysPressed["j"]) openQuests(state);
+    if (state.keysPressed["p"]) openHeartMeridian(state);
+    if (state.keysPressed["t"]) {
+      // tame attempt
+      if (state.player.hasPartnerUnlock && !state.companion) {
+        // First T after partner unlock summons the partner
+        state.companion = makeCompanion("partner", state.player.x - 30, state.player.y);
+        state.player.hasPartnerUnlock = false;
+        pushLog(state, `${state.companion.def.name} arrives at your side.`, "qi");
+      } else {
+        const r = tryTameBeast(state);
+        if (r) pushLog(state, r.msg, r.kind);
+        else pushLog(state, "Wound a tameable beast (rabbit/boar/wolf) below 25% HP, then face it and press T.", "");
+      }
+    }
+    if (state.keysPressed["v"]) {
+      const p = state.player;
+      if (p.realmIndex < 3) {
+        pushLog(state, "Sword-flight requires Foundation Establishment.", "bad");
+      } else if (p.flying) {
+        p.flying = false;
+        pushLog(state, "You alight on the ground.", "qi");
+      } else if (p.qi < 10) {
+        pushLog(state, "Not enough qi to take flight.", "bad");
+      } else {
+        p.flying = true;
+        pushLog(state, "Sword-flight engaged. Qi drains while aloft.", "qi");
+      }
+    }
     if (state.keysPressed["c"]) {
       const station = nearestCraftStation(state);
       if (station) openCraft(state, station);
@@ -368,6 +436,9 @@
     if (state.keysPressed["tab"]) openHelp();
     state.keysPressed = {};
 
+    // companion AI
+    tickCompanion(state, dt);
+
     // beasts
     for (const b of state.beasts) aiBeast(b, state.player, dt);
     // remove dead
@@ -377,7 +448,9 @@
         state.beasts.splice(i, 1);
       }
     }
-    maybeSpawnBeast(state, dt);
+    if (!state.dungeon && !state.tournament) maybeSpawnBeast(state, dt);
+    tickDungeon(state, dt);
+    tickTournament(state, dt);
     tickProjectiles(state, dt);
 
     // fx
@@ -385,8 +458,10 @@
     state.fx = state.fx.filter((f) => f.life > 0);
 
     // camera follow
-    state.cam.x = Math.max(0, Math.min(MAP_W * TILE - state.cam.w, state.player.x - state.cam.w / 2));
-    state.cam.y = Math.max(0, Math.min(MAP_H * TILE - state.cam.h, state.player.y - state.cam.h / 2));
+    const wpx = (state.world.width || MAP_W) * TILE;
+    const hpx = (state.world.height || MAP_H) * TILE;
+    state.cam.x = Math.max(0, Math.min(wpx - state.cam.w, state.player.x - state.cam.w / 2));
+    state.cam.y = Math.max(0, Math.min(hpx - state.cam.h, state.player.y - state.cam.h / 2));
 
     checkDeath();
 
@@ -395,6 +470,69 @@
     if (state.autosaveTimer <= 0) {
       state.autosaveTimer = 30;
       saveGame(state);
+    }
+  }
+
+  function drawWeatherParticles() {
+    const w = state.weather;
+    if (!w || w === "clear") return;
+    // Lazy-init particle pool sized by weather kind
+    let need = 0;
+    switch (w) {
+      case "rain":  need = 80; break;
+      case "storm": need = 160; break;
+      case "snow":  need = 60; break;
+      case "mist":  need = 40; break;
+    }
+    while (state.weatherParticles.length < need) {
+      state.weatherParticles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        seed: Math.random() * 1000,
+      });
+    }
+    while (state.weatherParticles.length > need) state.weatherParticles.pop();
+
+    const t = performance.now() / 1000;
+    if (w === "rain" || w === "storm") {
+      ctx.strokeStyle = w === "storm" ? "rgba(180, 200, 240, 0.6)" : "rgba(160, 180, 220, 0.5)";
+      ctx.lineWidth = 1;
+      for (const p of state.weatherParticles) {
+        p.y += 460 * (1 / 60);
+        p.x += 40 * (1 / 60);
+        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+        if (p.x > canvas.width) p.x -= canvas.width;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - 4, p.y - 14);
+        ctx.stroke();
+      }
+      // occasional lightning flash for storm
+      if (w === "storm" && Math.random() < 0.005) {
+        ctx.fillStyle = "rgba(255, 255, 240, 0.4)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    } else if (w === "snow") {
+      ctx.fillStyle = "rgba(245, 250, 255, 0.85)";
+      for (const p of state.weatherParticles) {
+        p.y += 25 * (1 / 60);
+        p.x += Math.sin(t + p.seed) * 0.6;
+        if (p.y > canvas.height) { p.y = -6; p.x = Math.random() * canvas.width; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (w === "mist") {
+      ctx.fillStyle = "rgba(220, 230, 240, 0.04)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(220, 230, 240, 0.2)";
+      for (const p of state.weatherParticles) {
+        p.x += 12 * (1 / 60);
+        if (p.x > canvas.width + 80) p.x = -80;
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, 60, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
@@ -428,6 +566,7 @@
     // depth-sorted entities
     const drawables = [];
     drawables.push({ y: state.player.y, fn: () => drawPlayer_(ctx, state.player, state.cam) });
+    if (state.companion) drawables.push({ y: state.companion.y, fn: () => drawCompanion(ctx, state.companion, state.cam) });
     for (const b of state.beasts) drawables.push({ y: b.y, fn: () => drawBeast_(ctx, b, state.cam) });
     for (const s of state.world.structures) {
       if (s.nodraw) continue;
@@ -444,7 +583,10 @@
         case "forge":   key = "struct_forge";   ax = s.tx * TILE; ay = s.ty * TILE; break;
         case "loom":    key = "struct_loom";    ax = s.tx * TILE; ay = s.ty * TILE; break;
         case "merchant":key = "entity_merchant";ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "sign":   key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "sign":    key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "cave":    key = "struct_cave";    ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "chest":   key = "struct_chest";   ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "decor":   key = "struct_" + DECORATIONS[s.decor].spriteKey; ax = s.tx * TILE; ay = s.ty * TILE; break;
         default: continue;
       }
       drawables.push({
@@ -482,6 +624,9 @@
       ctx.lineTo(f.bobberX - state.cam.x, f.bobberY - state.cam.y);
       ctx.stroke();
     }
+
+    // weather particles
+    drawWeatherParticles();
 
     // night overlay
     const dark = nightOverlay(state.time);
@@ -564,21 +709,74 @@
   }
 
   // --- BOOT ---
-  document.getElementById("btn-new").onclick = () => {
-    document.getElementById("title-screen").classList.add("hidden");
-    newGame();
-  };
-  document.getElementById("btn-load").onclick = () => {
-    if (!hasSave()) { alert("No save found."); return; }
-    document.getElementById("title-screen").classList.add("hidden");
-    continueGame();
-  };
-  document.getElementById("btn-help").onclick = openHelp;
-
-  if (!hasSave()) {
-    document.getElementById("btn-load").disabled = true;
-    document.getElementById("btn-load").style.opacity = 0.5;
+  function renderTitleSlots() {
+    const root = document.getElementById("save-slots");
+    root.innerHTML = "";
+    for (let i = 1; i <= NUM_SLOTS; i++) {
+      const meta = getSlotMeta(i);
+      const slotEl = document.createElement("div");
+      slotEl.className = "save-slot";
+      const title = document.createElement("div");
+      title.className = "slot-title";
+      title.textContent = `Life ${i}`;
+      slotEl.appendChild(title);
+      const metaEl = document.createElement("div");
+      if (meta) {
+        metaEl.className = "slot-meta";
+        metaEl.textContent = `Day ${meta.day} · ${meta.realm} · ${meta.money} stones`;
+      } else {
+        metaEl.className = "slot-empty";
+        metaEl.textContent = "(empty mortal coil)";
+      }
+      slotEl.appendChild(metaEl);
+      const actions = document.createElement("div");
+      actions.className = "slot-actions";
+      if (meta) {
+        const cont = document.createElement("button");
+        cont.textContent = "Continue";
+        cont.onclick = () => {
+          setActiveSlot(i);
+          document.getElementById("title-screen").classList.add("hidden");
+          continueGame();
+        };
+        actions.appendChild(cont);
+        const newB = document.createElement("button");
+        newB.textContent = "Restart";
+        newB.onclick = () => {
+          if (!confirm(`Begin a new life, overwriting Life ${i}?`)) return;
+          setActiveSlot(i);
+          deleteSave(i);
+          document.getElementById("title-screen").classList.add("hidden");
+          newGame();
+        };
+        actions.appendChild(newB);
+        const del = document.createElement("button");
+        del.className = "delete";
+        del.textContent = "✕";
+        del.title = "Delete";
+        del.onclick = () => {
+          if (!confirm(`Delete Life ${i}? This cannot be undone.`)) return;
+          deleteSave(i);
+          renderTitleSlots();
+        };
+        actions.appendChild(del);
+      } else {
+        const newB = document.createElement("button");
+        newB.textContent = "New Life";
+        newB.onclick = () => {
+          setActiveSlot(i);
+          document.getElementById("title-screen").classList.add("hidden");
+          newGame();
+        };
+        actions.appendChild(newB);
+      }
+      slotEl.appendChild(actions);
+      root.appendChild(slotEl);
+    }
   }
+  renderTitleSlots();
+
+  document.getElementById("btn-help").onclick = openHelp;
 
   requestAnimationFrame(frame);
 

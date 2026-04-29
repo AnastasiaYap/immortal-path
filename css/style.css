@@ -284,6 +284,73 @@ canvas#game {
   opacity: 0.8;
 }
 
+#save-slots {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.save-slot {
+  background: rgba(40, 30, 20, 0.6);
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  padding: 10px 14px;
+  width: 220px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.save-slot .slot-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+.save-slot .slot-meta {
+  font-size: 12px;
+  opacity: 0.85;
+  min-height: 16px;
+}
+
+.save-slot .slot-empty {
+  font-style: italic;
+  opacity: 0.6;
+  font-size: 12px;
+  min-height: 16px;
+}
+
+.save-slot .slot-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.save-slot .slot-actions button {
+  flex: 1;
+  background: linear-gradient(180deg, #c43a31, #7a1f1a);
+  color: var(--paper);
+  border: 1px solid var(--gold);
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+.save-slot .slot-actions button.delete {
+  background: linear-gradient(180deg, #5a3a30, #2a1a18);
+  flex: 0;
+  padding: 4px 8px;
+}
+
+.save-slot .slot-actions button:hover { filter: brightness(1.15); }
+
 .title-buttons { display: flex; gap: 12px; margin-bottom: 30px; }
 
 .title-buttons button {

@@ -130,6 +130,16 @@ function openInventory(state) {
       };
       actions.appendChild(eb);
     }
+    if (item.decor) {
+      const pb = document.createElement("button"); pb.textContent = "Place";
+      pb.style.marginLeft = "4px";
+      pb.onclick = () => {
+        const r = placeDecoration(state, id);
+        if (r) pushLog(state, r.msg, r.kind);
+        openInventory(state);
+      };
+      actions.appendChild(pb);
+    }
     if (item.edible || item.qiRestore || item.hpRestore || item.bodyBoost || item.breakthroughBoost || item.staminaRestore) {
       const useBtn = document.createElement("button"); useBtn.textContent = "Use";
       useBtn.style.marginLeft = "4px";
@@ -496,6 +506,211 @@ function skillPerkLine(p, id) {
   }
 }
 
+// --- QUESTS ---
+function openQuests(state) {
+  const p = state.player;
+  if (!p.activeQuests) p.activeQuests = [];
+  if (!p.completedQuests) p.completedQuests = [];
+  if (!p.questCounters) p.questCounters = {};
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 8px";
+  intro.innerHTML = `<i>Visit the elder at the market to take new quests.</i> · Reputation: <b>${p.reputation || 0}</b>`;
+  wrap.appendChild(intro);
+
+  const aH = document.createElement("h3"); aH.textContent = "Active"; aH.style.marginTop = "0";
+  wrap.appendChild(aH);
+  if (!p.activeQuests.length) wrap.appendChild(textRow("(none)"));
+  for (const qid of p.activeQuests) {
+    const q = QUESTS[qid];
+    if (!q) continue;
+    const row = document.createElement("div"); row.className = "item-row";
+    const progress = questProgressString(p, qid);
+    row.innerHTML = `<span><b>${q.name}</b> <i style="opacity:0.6">— ${q.desc}</i><br/><span style="color:#5fae8a">${progress}</span></span>`;
+    if (isQuestComplete(p, qid)) {
+      const btn = document.createElement("button");
+      btn.textContent = "Turn In";
+      btn.onclick = () => {
+        const r = turnInQuest(state, qid);
+        pushLog(state, r.msg, r.kind);
+        openQuests(state);
+      };
+      row.appendChild(btn);
+    }
+    wrap.appendChild(row);
+  }
+
+  const cH = document.createElement("h3"); cH.textContent = "Completed"; cH.style.marginTop = "12px";
+  wrap.appendChild(cH);
+  if (!p.completedQuests.length) wrap.appendChild(textRow("(none)"));
+  for (const qid of p.completedQuests) {
+    const q = QUESTS[qid];
+    if (!q) continue;
+    const row = document.createElement("div"); row.className = "item-row";
+    row.innerHTML = `<span style="opacity:0.7"><b>${q.name}</b> <i>— ${q.desc}</i></span>`;
+    wrap.appendChild(row);
+  }
+
+  openModal("Quest Log", wrap);
+}
+
+function questProgressString(p, qid) {
+  const q = QUESTS[qid];
+  if (!q) return "";
+  if (q.type === "kill" || q.type === "gather") {
+    return `Progress: ${p.questCounters[qid] || 0} / ${q.count}`;
+  }
+  if (q.type === "kill_set") {
+    const sub = p.questCounters[qid] || {};
+    return Object.entries(q.target).map(([id, n]) => `${BEASTS[id]?.name || id}: ${sub[id] || 0}/${n}`).join(", ");
+  }
+  if (q.type === "deliver") {
+    return `${ITEMS[q.target].name}: ${p.inventory[q.target] || 0} / ${q.count}`;
+  }
+  return "";
+}
+
+function openTournamentLobby(state) {
+  const p = state.player;
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 8px";
+  intro.innerHTML = `<i>The arena master sizes you up. "Three rounds. The crowd loves bloodshed. Entry: ${TOURNAMENT.entryFee} stones."</i>`;
+  if (p.title) intro.innerHTML += `<br/><b>Current title:</b> ${p.title}`;
+  wrap.appendChild(intro);
+  const btn = document.createElement("button");
+  btn.textContent = `Enter (${TOURNAMENT.entryFee} stones)`;
+  btn.style.cssText = "background:#c43a31; color:white; border:none; padding:8px 14px; border-radius:3px; cursor:pointer; font-family:inherit; font-size:14px;";
+  btn.disabled = p.money < TOURNAMENT.entryFee || state.tournament || state.dungeon;
+  btn.onclick = () => {
+    if (p.money < TOURNAMENT.entryFee) return;
+    p.money -= TOURNAMENT.entryFee;
+    closeModal();
+    startTournament(state);
+  };
+  wrap.appendChild(btn);
+  openModal("Sect Tournament", wrap);
+}
+
+function openMerchantHub(state) {
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 12px";
+  intro.innerHTML = `<i>The merchant gestures at the stalls and the elder's quest board. "What does the day bring?"</i>`;
+  wrap.appendChild(intro);
+  const row = (label, fn) => {
+    const r = document.createElement("div"); r.className = "item-row";
+    r.innerHTML = `<span><b>${label}</b></span>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Open";
+    btn.onclick = () => { closeModal(); fn(); };
+    r.appendChild(btn);
+    wrap.appendChild(r);
+  };
+  row("Trade — buy seeds, supplies, and tools",      () => openShop(state));
+  row("Quest Board — speak to the elder",            () => openQuestBoard(state));
+  row("Sect Tournament — fight in the arena",        () => openTournamentLobby(state));
+  openModal("Eastern Market", wrap);
+}
+
+function openQuestBoard(state) {
+  const p = state.player;
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 8px";
+  intro.innerHTML = `<i>The village elder strokes his beard. "Tasks for the brave, friend."</i>`;
+  wrap.appendChild(intro);
+  let any = false;
+  for (const qid of QUEST_ORDER) {
+    const q = QUESTS[qid];
+    if (!q) continue;
+    if (p.activeQuests.includes(qid)) continue;
+    if (p.completedQuests.includes(qid)) continue;
+    if ((q.minRealm ?? 0) > p.realmIndex) continue;
+    any = true;
+    const row = document.createElement("div"); row.className = "item-row";
+    row.innerHTML = `<span><b>${q.name}</b> <i style="opacity:0.6">— ${q.desc}</i></span>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Accept";
+    btn.onclick = () => {
+      const r = acceptQuest(state, qid);
+      pushLog(state, r.msg, r.kind);
+      openQuestBoard(state);
+    };
+    row.appendChild(btn);
+    wrap.appendChild(row);
+  }
+  if (!any) wrap.appendChild(textRow("(no new quests for your realm)"));
+  openModal("Quest Board", wrap);
+}
+
+// --- HEART-MERIDIAN (stat points) ---
+function openHeartMeridian(state) {
+  const p = state.player;
+  if (p.statPoints == null) p.statPoints = 0;
+  if (!p.statSpent) p.statSpent = { hp: 0, qi: 0, atk: 0, def: 0 };
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 8px";
+  intro.innerHTML = `<i>Allocate your inner meridians. Each breakthrough grants 3 points.</i> · Available: <b>${p.statPoints}</b>`;
+  wrap.appendChild(intro);
+
+  const opts = [
+    { id: "hp",  label: "+5 max HP",   apply: () => { p.bonusHpMax = (p.bonusHpMax || 0) + 5; p.hpMax += 5; p.hp += 5; } },
+    { id: "qi",  label: "+3 max Qi",   apply: () => { p.bonusQiMax = (p.bonusQiMax || 0) + 3; p.qiMax += 3; p.qi += 3; } },
+    { id: "atk", label: "+1 attack",   apply: () => { p.bonusAtk = (p.bonusAtk || 0) + 1; p.weaponDmg += 1; } },
+    { id: "def", label: "+1 defense",  apply: () => { p.bonusDef = (p.bonusDef || 0) + 1; } },
+  ];
+  for (const o of opts) {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `<span><b>${o.label}</b> <i style="opacity:0.6">(spent: ${p.statSpent[o.id]})</i></span>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Allocate";
+    btn.disabled = p.statPoints <= 0;
+    btn.onclick = () => {
+      if (p.statPoints <= 0) return;
+      o.apply();
+      p.statPoints--;
+      p.statSpent[o.id]++;
+      pushLog(state, `Meridians strengthened: ${o.label}.`, "qi");
+      openHeartMeridian(state);
+    };
+    row.appendChild(btn);
+    wrap.appendChild(row);
+  }
+
+  // Reset
+  const totalSpent = Object.values(p.statSpent).reduce((a, b) => a + b, 0);
+  if (totalSpent > 0) {
+    const resetRow = document.createElement("div");
+    resetRow.className = "item-row";
+    resetRow.style.marginTop = "12px";
+    resetRow.innerHTML = `<span><b>Reset Meridians</b> <i style="opacity:0.6">— costs 1 Qi Recovery Pill, refunds all ${totalSpent} points</i></span>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Reset";
+    btn.disabled = (p.inventory.qi_pill || 0) <= 0;
+    btn.onclick = () => {
+      if (!takeItem(p, "qi_pill", 1)) return;
+      // Reverse all bonuses
+      p.hpMax -= (p.bonusHpMax || 0);
+      p.hp = Math.min(p.hp, p.hpMax);
+      p.qiMax -= (p.bonusQiMax || 0);
+      p.qi = Math.min(p.qi, p.qiMax);
+      p.weaponDmg -= (p.bonusAtk || 0);
+      p.bonusHpMax = 0; p.bonusQiMax = 0; p.bonusAtk = 0; p.bonusDef = 0;
+      p.statPoints += totalSpent;
+      p.statSpent = { hp: 0, qi: 0, atk: 0, def: 0 };
+      pushLog(state, "Meridians cleared. All points refunded.", "qi");
+      openHeartMeridian(state);
+    };
+    resetRow.appendChild(btn);
+    wrap.appendChild(resetRow);
+  }
+
+  openModal("Heart-Meridian Map", wrap);
+}
+
 // --- HELP ---
 function openHelp() {
   const html = `
@@ -539,13 +754,21 @@ function openHelp() {
 }
 
 // --- SAVE ---
-const SAVE_KEY = "immortal_path_save_v1";
+const SAVE_PREFIX = "immortal_path_save_v2_";
+const NUM_SLOTS = 3;
+let activeSaveSlot = 1;
 
-function saveGame(state) {
+function slotKey(slot) { return SAVE_PREFIX + slot; }
+
+function saveGame(state, slot = activeSaveSlot) {
+  // Don't autosave inside instanced encounters — would persist arena/dungeon
+  // state on top of the real world and lose progress.
+  if (state.dungeon || state.tournament) return false;
   try {
     const data = {
       day: state.day,
       time: state.time,
+      weather: state.weather,
       player: state.player,
       world: {
         tiles: state.world.tiles,
@@ -553,17 +776,23 @@ function saveGame(state) {
         structures: state.world.structures,
         spawn: state.world.spawn,
       },
+      _meta: {
+        day: state.day,
+        realm: REALMS[state.player.realmIndex].name,
+        money: state.player.money,
+        savedAt: new Date().toISOString(),
+      },
     };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(slotKey(slot), JSON.stringify(data));
     return true;
   } catch (e) {
     return false;
   }
 }
 
-function loadGame() {
+function loadGame(slot = activeSaveSlot) {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(slotKey(slot));
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (e) {
@@ -571,6 +800,23 @@ function loadGame() {
   }
 }
 
-function hasSave() {
-  return localStorage.getItem(SAVE_KEY) !== null;
+function deleteSave(slot) {
+  localStorage.removeItem(slotKey(slot));
 }
+
+function getSlotMeta(slot) {
+  try {
+    const raw = localStorage.getItem(slotKey(slot));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data._meta || { day: data.day, realm: REALMS[data.player.realmIndex].name, money: data.player.money };
+  } catch (e) {
+    return null;
+  }
+}
+
+function hasSave(slot = activeSaveSlot) {
+  return localStorage.getItem(slotKey(slot)) !== null;
+}
+
+function setActiveSlot(slot) { activeSaveSlot = slot; }

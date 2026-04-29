@@ -32,11 +32,14 @@
       <div class="slot" data-key="E">Interact</div>
       <div class="slot" data-key="F">Attack / Throw</div>
       <div class="slot" data-key="M">Meditate</div>
-      <div class="slot" data-key="I">Inventory</div>
+      <div class="slot" data-key="I">Inv</div>
       <div class="slot" data-key="K">Skills</div>
+      <div class="slot" data-key="J">Quests</div>
+      <div class="slot" data-key="P">Points</div>
+      <div class="slot" data-key="V">Fly</div>
       <div class="slot" data-key="C">Craft</div>
       <div class="slot" data-key="B">Build</div>
-      <div class="slot" data-key="Tab">Map / Help</div>
+      <div class="slot" data-key="Tab">Help</div>
     </div>
 
     <!-- Toast / message log -->
@@ -56,15 +59,14 @@
     <div id="title-screen">
       <h1>Immortal Path</h1>
       <p class="sub">A Xianxia Life Sim — farm, work, cultivate, ascend.</p>
+      <div id="save-slots"></div>
       <div class="title-buttons">
-        <button id="btn-new">New Life</button>
-        <button id="btn-load">Continue</button>
         <button id="btn-help">How to Play</button>
       </div>
       <div class="title-tip">
         <p>Move with <b>WASD</b>. Interact with <b>E</b>. Attack with <b>F</b>.</p>
-        <p>Meditate (<b>M</b>) at the meditation mat to gather Qi and break through realms.</p>
-        <p>Tend your farm, hunt low beasts, craft pills &amp; talismans, and walk the immortal path.</p>
+        <p>Meditate (<b>M</b>) at the meditation mat. Press <b>K</b> for skills, <b>J</b> for quests, <b>P</b> for stat points, <b>V</b> to fly (Foundation+).</p>
+        <p>Tend your farm, hunt low beasts, take quests, craft pills &amp; talismans, and walk the immortal path.</p>
       </div>
     </div>
   </div>
@@ -72,6 +74,7 @@
   <script src="js/sprites.js"></script>
   <script src="js/data.js"></script>
   <script src="js/skills.js"></script>
+  <script src="js/content.js"></script>
   <script src="js/world.js"></script>
   <script src="js/entities.js"></script>
   <script src="js/systems.js"></script>
