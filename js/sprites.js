@@ -1,7 +1,18 @@
-// Procedural chibi sprite generator. Everything is drawn to offscreen canvases
-// once and then blitted, so we never ship raster art.
+// Pixel-art sprite generator. Every sprite is drawn at boot to an offscreen
+// canvas and cached in SpriteCache. The game's draw routines blit cached
+// canvases by key — no external image assets are shipped.
+//
+// Style is driven by the project art bible (Stardew/Rune-Factory cozy xianxia):
+//   * Soft palette — jade green, bamboo, warm wood, pale gold, peach blossom,
+//     mist blue. No harsh neon.
+//   * Chunky 2x2 "logical pixels" — every fillRect is on a 2-actual-pixel grid
+//     so the result reads as crisp pixel art at native resolution.
+//   * 1-pixel dark outlines around characters, beasts, and key props.
+//   * Big-head chibi proportions for cultivators, with hair bun + ribbon
+//     details visible at low res.
 
-const TILE = 32;
+const TILE = 32;       // logical world tile = 32 actual px = 16 "pixel-art" cells.
+const PXSCALE = 2;     // each pixel-art cell is 2x2 actual pixels.
 const SpriteCache = {};
 
 function makeCanvas(w, h) {
@@ -11,1360 +22,1814 @@ function makeCanvas(w, h) {
   return c;
 }
 
-function pixel(ctx, x, y, color, size = 1) {
+// Single chunky pixel — 2x2 actual px at logical (x,y).
+function px(ctx, x, y, color) {
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, size, size);
+  ctx.fillRect(x * PXSCALE, y * PXSCALE, PXSCALE, PXSCALE);
 }
 
-// ---------- TILES ----------
+// Filled rect on the logical 2x grid.
+function pxRect(ctx, x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * PXSCALE, y * PXSCALE, w * PXSCALE, h * PXSCALE);
+}
+
+// Render a string-based sprite. `lines` is an array of strings (each char =
+// one logical pixel); `palette` maps each char to a color. '.' is transparent.
+function drawSprite(ctx, lines, palette, ox = 0, oy = 0, scale = PXSCALE) {
+  for (let y = 0; y < lines.length; y++) {
+    const row = lines[y];
+    for (let x = 0; x < row.length; x++) {
+      const c = row[x];
+      if (c === "." || c === " ") continue;
+      const color = palette[c];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(ox + x * scale, oy + y * scale, scale, scale);
+    }
+  }
+}
+
+// ===========================================================================
+// PALETTES
+// ===========================================================================
+
+// Project-wide palette anchored to the design deck.
+const PAL = {
+  ink:        "#2a221b",
+  inkSoft:    "#3a2e22",
+  parchment:  "#f5ecd5",
+  paper:      "#f1e3b6",
+
+  jade:       "#7fbf95",
+  jadeDark:   "#4d8c66",
+  jadeDeep:   "#2f5f44",
+  jadeLight:  "#b6e5b9",
+  jadeMist:   "#dff0d4",
+
+  bamboo:     "#8aae5a",
+  bambooDark: "#4d7035",
+  bambooLight:"#c2dc8a",
+
+  woodMid:    "#a87a48",
+  woodDark:   "#704c25",
+  woodDeep:   "#3a2010",
+  woodLight:  "#d4a675",
+
+  goldMid:    "#d4a548",
+  goldLight:  "#f0c878",
+  goldDark:   "#a87b1f",
+
+  peach:      "#f4b6c2",
+  peachDeep:  "#e08aa0",
+  peachWhite: "#fde4ea",
+
+  mist:       "#c8d8e8",
+  mistDeep:   "#7d9ab2",
+
+  cream:      "#f5ecd5",
+  white:      "#fbf6e8",
+  shadow:     "rgba(36,28,20,0.32)",
+};
+
+// ===========================================================================
+// TILES (16x16 logical → 32x32 actual)
+// ===========================================================================
+
+// Pseudo-random but stable per-tile, so each tile sprite has consistent
+// texture rather than a one-time roll.
+function tileNoise(seed) {
+  return function(i) {
+    const x = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+}
 
 function drawGrassTile(ctx) {
-  ctx.fillStyle = "#7cb86a";
-  ctx.fillRect(0, 0, TILE, TILE);
-  // grass blades
-  for (let i = 0; i < 14; i++) {
-    const x = (i * 7 + 3) % TILE;
-    const y = (i * 11 + 5) % TILE;
-    pixel(ctx, x, y, "#5a9648");
-    pixel(ctx, x, y - 1, "#9bd185");
+  const rnd = tileNoise(7);
+  pxRect(ctx, 0, 0, 16, 16, "#8fc46a"); // base mid-grass
+  // dark blade clusters
+  for (let i = 0; i < 24; i++) {
+    const x = Math.floor(rnd(i) * 16);
+    const y = Math.floor(rnd(i + 90) * 16);
+    px(ctx, x, y, "#5e9442");
   }
-  // shadow border
-  ctx.strokeStyle = "rgba(0,0,0,0.05)";
-  ctx.strokeRect(0.5, 0.5, TILE - 1, TILE - 1);
+  // light tip highlights
+  for (let i = 0; i < 14; i++) {
+    const x = Math.floor(rnd(i + 200) * 16);
+    const y = Math.floor(rnd(i + 300) * 16);
+    px(ctx, x, y, "#bbe190");
+  }
+  // occasional white blossom dot
+  if (true) {
+    px(ctx, 4, 11, "#fde4ea");
+    px(ctx, 12, 4, "#fde4ea");
+  }
 }
 
 function drawDirtTile(ctx) {
-  ctx.fillStyle = "#8a6a44";
-  ctx.fillRect(0, 0, TILE, TILE);
-  for (let i = 0; i < 18; i++) {
-    const x = (i * 5 + 2) % TILE;
-    const y = (i * 9 + 1) % TILE;
-    pixel(ctx, x, y, i % 2 ? "#6e5230" : "#a88560");
+  const rnd = tileNoise(13);
+  pxRect(ctx, 0, 0, 16, 16, "#a07550"); // mid earth
+  for (let i = 0; i < 20; i++) {
+    const x = Math.floor(rnd(i) * 16);
+    const y = Math.floor(rnd(i + 50) * 16);
+    px(ctx, x, y, "#6c4426");
+  }
+  for (let i = 0; i < 14; i++) {
+    const x = Math.floor(rnd(i + 90) * 16);
+    const y = Math.floor(rnd(i + 130) * 16);
+    px(ctx, x, y, "#c39570");
   }
 }
 
 function drawTilledTile(ctx) {
-  drawDirtTile(ctx);
-  ctx.fillStyle = "#5a4220";
-  for (let y = 4; y < TILE; y += 6) {
-    ctx.fillRect(2, y, TILE - 4, 2);
+  pxRect(ctx, 0, 0, 16, 16, "#8b5a35"); // base
+  // 3 dark furrows
+  for (const fy of [3, 8, 13]) {
+    pxRect(ctx, 0, fy, 16, 1, "#5a361a");
+    pxRect(ctx, 0, fy + 1, 16, 1, "#7c4a26");
   }
+  // tiny pebbles
+  px(ctx, 5, 1, "#c39570");
+  px(ctx, 11, 6, "#c39570");
+  px(ctx, 2, 11, "#c39570");
 }
 
 function drawWateredTile(ctx) {
-  drawTilledTile(ctx);
-  ctx.fillStyle = "rgba(60, 90, 160, 0.45)";
-  ctx.fillRect(0, 0, TILE, TILE);
-  ctx.fillStyle = "rgba(120, 170, 230, 0.4)";
-  for (let y = 4; y < TILE; y += 6) {
-    ctx.fillRect(2, y, TILE - 4, 2);
+  pxRect(ctx, 0, 0, 16, 16, "#5a3a1f");
+  for (const fy of [3, 8, 13]) {
+    pxRect(ctx, 0, fy, 16, 1, "#34200e");
+    pxRect(ctx, 0, fy + 1, 16, 1, "#4a2e16");
   }
+  // damp shimmer dots
+  px(ctx, 4, 5, "#7d9ab2");
+  px(ctx, 11, 10, "#7d9ab2");
+  px(ctx, 2, 14, "#7d9ab2");
 }
 
 function drawPathTile(ctx) {
-  ctx.fillStyle = "#b8a378";
-  ctx.fillRect(0, 0, TILE, TILE);
-  for (let i = 0; i < 14; i++) {
-    const x = (i * 7 + 3) % TILE;
-    const y = (i * 11 + 5) % TILE;
-    pixel(ctx, x, y, i % 2 ? "#9a8560" : "#d4c098");
+  const rnd = tileNoise(21);
+  pxRect(ctx, 0, 0, 16, 16, "#d4b885"); // sandy base
+  for (let i = 0; i < 16; i++) {
+    const x = Math.floor(rnd(i) * 16);
+    const y = Math.floor(rnd(i + 70) * 16);
+    px(ctx, x, y, "#a8895a");
+  }
+  for (let i = 0; i < 10; i++) {
+    const x = Math.floor(rnd(i + 200) * 16);
+    const y = Math.floor(rnd(i + 250) * 16);
+    px(ctx, x, y, "#ecd6a8");
   }
 }
 
 function drawWaterTile(ctx) {
-  ctx.fillStyle = "#3a78c2";
-  ctx.fillRect(0, 0, TILE, TILE);
-  ctx.fillStyle = "#6aa5e5";
-  for (let i = 0; i < 4; i++) {
-    ctx.fillRect(3 + (i * 7) % 22, 5 + i * 7, 6, 1);
-  }
-  ctx.fillStyle = "#9bc8f0";
-  ctx.fillRect(4, 12, 3, 1);
-  ctx.fillRect(20, 22, 4, 1);
+  pxRect(ctx, 0, 0, 16, 16, "#5d96cf");
+  // ripple lines
+  pxRect(ctx, 2, 4, 5, 1, "#a4c8e8");
+  pxRect(ctx, 10, 8, 4, 1, "#a4c8e8");
+  pxRect(ctx, 1, 12, 3, 1, "#a4c8e8");
+  pxRect(ctx, 9, 13, 5, 1, "#a4c8e8");
+  // sparkle
+  px(ctx, 6, 2, "#fbf6e8");
+  px(ctx, 13, 6, "#fbf6e8");
+  px(ctx, 3, 10, "#fbf6e8");
 }
 
 function drawStoneTile(ctx) {
-  ctx.fillStyle = "#7a7670";
-  ctx.fillRect(0, 0, TILE, TILE);
-  ctx.strokeStyle = "#5a5650";
-  ctx.beginPath();
-  ctx.moveTo(0, 12); ctx.lineTo(TILE, 12);
-  ctx.moveTo(0, 22); ctx.lineTo(TILE, 22);
-  ctx.moveTo(10, 0); ctx.lineTo(10, 12);
-  ctx.moveTo(20, 12); ctx.lineTo(20, 22);
-  ctx.moveTo(8, 22); ctx.lineTo(8, TILE);
-  ctx.moveTo(22, 22); ctx.lineTo(22, TILE);
-  ctx.stroke();
-  ctx.fillStyle = "#9a948c";
-  pixel(ctx, 4, 4, "#9a948c", 2);
-  pixel(ctx, 24, 16, "#9a948c", 2);
+  pxRect(ctx, 0, 0, 16, 16, "#9a948c");
+  // crack divisions creating a 2x2 stone pattern
+  pxRect(ctx, 0, 7, 16, 1, "#5a544c");
+  pxRect(ctx, 7, 0, 1, 7, "#5a544c");
+  pxRect(ctx, 9, 8, 1, 8, "#5a544c");
+  // surface specks
+  px(ctx, 3, 3, "#bdb6ad");
+  px(ctx, 12, 4, "#bdb6ad");
+  px(ctx, 4, 11, "#bdb6ad");
+  px(ctx, 13, 12, "#bdb6ad");
+  px(ctx, 2, 9, "#7a7670");
+  px(ctx, 11, 14, "#7a7670");
 }
 
 function drawWoodFloorTile(ctx) {
-  ctx.fillStyle = "#a87a48";
-  ctx.fillRect(0, 0, TILE, TILE);
-  ctx.strokeStyle = "#704c25";
-  ctx.beginPath();
-  for (let y = 8; y < TILE; y += 8) {
-    ctx.moveTo(0, y); ctx.lineTo(TILE, y);
-  }
-  ctx.stroke();
-  ctx.fillStyle = "#c89868";
-  ctx.fillRect(2, 2, 6, 1);
-  ctx.fillRect(20, 18, 6, 1);
+  pxRect(ctx, 0, 0, 16, 16, "#b08458");
+  // plank gaps
+  pxRect(ctx, 0, 5, 16, 1, "#704c25");
+  pxRect(ctx, 0, 10, 16, 1, "#704c25");
+  // grain highlights
+  pxRect(ctx, 2, 2, 4, 1, "#cea478");
+  pxRect(ctx, 9, 7, 5, 1, "#cea478");
+  pxRect(ctx, 3, 12, 3, 1, "#cea478");
+  pxRect(ctx, 10, 13, 4, 1, "#cea478");
 }
 
 function drawWallTile(ctx) {
-  ctx.fillStyle = "#6a4a2a";
-  ctx.fillRect(0, 0, TILE, TILE);
-  ctx.fillStyle = "#8a6a3a";
-  ctx.fillRect(0, 0, TILE, 6);
-  ctx.fillStyle = "#4a2c12";
-  ctx.fillRect(0, TILE - 4, TILE, 4);
+  // bamboo-clad wall, vertical
+  pxRect(ctx, 0, 0, 16, 16, "#7e5837");
+  for (let x = 1; x < 16; x += 3) {
+    pxRect(ctx, x, 0, 1, 16, "#a87a48");
+    pxRect(ctx, x + 1, 0, 1, 16, "#5a3a1a");
+  }
+  // joint bands
+  pxRect(ctx, 0, 5, 16, 1, "#3a2010");
+  pxRect(ctx, 0, 12, 16, 1, "#3a2010");
 }
 
 function drawForestTile(ctx) {
   drawGrassTile(ctx);
-  // tree trunk
-  ctx.fillStyle = "#5a3a1a";
-  ctx.fillRect(13, 18, 6, 10);
-  // canopy
-  ctx.fillStyle = "#2f6b2a";
-  ctx.beginPath();
-  ctx.arc(16, 14, 11, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#4a8d3a";
-  ctx.beginPath();
-  ctx.arc(13, 12, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#1a4a18";
-  ctx.beginPath();
-  ctx.arc(20, 17, 4, 0, Math.PI * 2);
-  ctx.fill();
+  // tree (chunky pixel pine/leaf-blob)
+  const PAL_T = {
+    o: "#1d3a1a",
+    g: "#3a6826",
+    G: "#5e9442",
+    L: "#bbe190",
+    t: "#5a3018",
+    T: "#7a4828",
+  };
+  const tree = [
+    "................",
+    ".......oo.......",
+    "......ogggo.....",
+    ".....oggGGgo....",
+    "....oggGGGGgo...",
+    "....oggGLLGgo...",
+    ".....oGGGGGo....",
+    "......oGGGo.....",
+    ".......oGo......",
+    ".......TTT......",
+    "......tTTTt.....",
+    "......tTtTt.....",
+    "................",
+    "................",
+    "................",
+    "................",
+  ];
+  drawSprite(ctx, tree, PAL_T);
 }
 
-// Crop growth stages
-function drawCrop(ctx, stage, color) {
-  drawTilledTile(ctx);
-  if (stage === 0) {
-    // seedling sprout
-    ctx.fillStyle = "#7cb050";
-    ctx.fillRect(15, 22, 2, 6);
-    pixel(ctx, 13, 22, "#9bd075", 2);
-    pixel(ctx, 17, 22, "#9bd075", 2);
-  } else if (stage === 1) {
-    // young plant
-    ctx.fillStyle = "#5a9030";
-    ctx.fillRect(15, 14, 2, 14);
-    ctx.fillStyle = "#7cb850";
-    ctx.fillRect(11, 14, 4, 4);
-    ctx.fillRect(17, 14, 4, 4);
-    ctx.fillRect(13, 8, 6, 6);
-  } else {
-    // mature
-    ctx.fillStyle = "#4a7028";
-    ctx.fillRect(15, 14, 2, 14);
-    ctx.fillStyle = "#6ca040";
-    ctx.fillRect(9, 14, 4, 4);
-    ctx.fillRect(19, 14, 4, 4);
-    // fruit
-    ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(12, 10, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(20, 10, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(16, 6, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    pixel(ctx, 11, 9, "rgba(255,255,255,0.6)");
-    pixel(ctx, 19, 9, "rgba(255,255,255,0.6)");
-  }
-}
-
-// ---------- ENTITIES ----------
-
-// Generic chibi: huge head, tiny body. Top-down 3/4 view.
-function drawChibi(ctx, opts) {
-  const {
-    skin = "#f0d2a8",
-    robe = "#c43a31",
-    sash = "#d4a548",
-    hair = "#1a1410",
-    accent = "#7a1f1a",
-    bob = 0,
-    facing = "down",
-  } = opts;
-
-  const cx = 16;
-  const cy = 22 + bob;
-
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath();
-  ctx.ellipse(cx, 28, 8, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // robe / body (small, oval)
-  ctx.fillStyle = robe;
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, 7, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // sash
-  ctx.fillStyle = sash;
-  ctx.fillRect(cx - 6, cy - 1, 12, 2);
-
-  // arms
-  ctx.fillStyle = robe;
-  ctx.fillRect(cx - 8, cy - 2, 2, 4);
-  ctx.fillRect(cx + 6, cy - 2, 2, 4);
-  ctx.fillStyle = skin;
-  pixel(ctx, cx - 8, cy + 2, skin, 2);
-  pixel(ctx, cx + 7, cy + 2, skin, 2);
-
-  // head (huge, chibi style)
-  const hy = cy - 11;
-  ctx.fillStyle = skin;
-  ctx.beginPath();
-  ctx.arc(cx, hy, 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  // hair
-  ctx.fillStyle = hair;
-  if (facing === "up") {
-    ctx.beginPath();
-    ctx.arc(cx, hy, 8.5, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.beginPath();
-    ctx.arc(cx, hy - 2, 8, Math.PI, Math.PI * 2);
-    ctx.fill();
-    // top knot
-    ctx.beginPath();
-    ctx.arc(cx, hy - 8, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = accent;
-    ctx.fillRect(cx - 1, hy - 11, 2, 3);
-  }
-
-  // face
-  if (facing !== "up") {
-    ctx.fillStyle = "#1a1410";
-    if (facing === "left") {
-      pixel(ctx, cx - 4, hy, "#1a1410", 2);
-    } else if (facing === "right") {
-      pixel(ctx, cx + 2, hy, "#1a1410", 2);
-    } else {
-      pixel(ctx, cx - 4, hy, "#1a1410", 2);
-      pixel(ctx, cx + 2, hy, "#1a1410", 2);
-    }
-    // mouth
-    ctx.fillStyle = "#a85040";
-    ctx.fillRect(cx - 1, hy + 3, 2, 1);
-  }
-}
-
-function drawPlayer(ctx, frame, facing) {
-  drawChibi(ctx, {
-    robe: "#3a78c2",
-    sash: "#d4a548",
-    skin: "#f0d2a8",
-    hair: "#1a1410",
-    accent: "#c43a31",
-    bob: frame ? -1 : 0,
-    facing,
-  });
-}
-
-function drawBeastRabbit(ctx, frame) {
-  const bob = frame ? -1 : 0;
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath();
-  ctx.ellipse(16, 28, 7, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // body
-  ctx.fillStyle = "#b8b0a0";
-  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#c8c0b0";
-  ctx.beginPath(); ctx.arc(16, 14 + bob, 6, 0, Math.PI * 2); ctx.fill();
-  // ears
-  ctx.fillStyle = "#a8a090";
-  ctx.fillRect(12, 4 + bob, 2, 8);
-  ctx.fillRect(18, 4 + bob, 2, 8);
-  ctx.fillStyle = "#e8b8c8";
-  ctx.fillRect(12, 6 + bob, 2, 4);
-  ctx.fillRect(18, 6 + bob, 2, 4);
-  // glowing red eyes (spirit beast)
-  ctx.fillStyle = "#ff3030";
-  pixel(ctx, 13, 14 + bob, "#ff3030", 2);
-  pixel(ctx, 17, 14 + bob, "#ff3030", 2);
-  // qi aura
-  ctx.fillStyle = "rgba(255, 100, 100, 0.15)";
-  ctx.beginPath(); ctx.arc(16, 18 + bob, 12, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawBeastBoar(ctx, frame) {
-  const bob = frame ? -1 : 0;
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // body
-  ctx.fillStyle = "#5a4a30";
-  ctx.beginPath(); ctx.ellipse(16, 20 + bob, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#6a5a40";
-  ctx.beginPath(); ctx.arc(16, 11 + bob, 6, 0, Math.PI * 2); ctx.fill();
-  // tusks
-  ctx.fillStyle = "#f0e8d0";
-  ctx.fillRect(11, 14 + bob, 2, 3);
-  ctx.fillRect(19, 14 + bob, 2, 3);
-  // eyes
-  ctx.fillStyle = "#ff8030";
-  pixel(ctx, 13, 10 + bob, "#ff8030", 2);
-  pixel(ctx, 17, 10 + bob, "#ff8030", 2);
-  // bristles
-  ctx.fillStyle = "#3a2a18";
-  ctx.fillRect(10, 14 + bob, 1, 3);
-  ctx.fillRect(13, 13 + bob, 1, 3);
-  ctx.fillRect(18, 13 + bob, 1, 3);
-  ctx.fillRect(21, 14 + bob, 1, 3);
-}
-
-function drawBeastWolf(ctx, frame) {
-  const bob = frame ? -1 : 0;
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // body
-  ctx.fillStyle = "#3a3a4a";
-  ctx.beginPath(); ctx.ellipse(16, 20 + bob, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#4a4a5a";
-  ctx.beginPath(); ctx.arc(16, 11 + bob, 6, 0, Math.PI * 2); ctx.fill();
-  // ears
-  ctx.fillStyle = "#2a2a3a";
-  ctx.beginPath();
-  ctx.moveTo(11, 7 + bob); ctx.lineTo(13, 3 + bob); ctx.lineTo(15, 7 + bob); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(17, 7 + bob); ctx.lineTo(19, 3 + bob); ctx.lineTo(21, 7 + bob); ctx.fill();
-  // glowing blue spirit eyes
-  ctx.fillStyle = "#7afaff";
-  pixel(ctx, 13, 10 + bob, "#7afaff", 2);
-  pixel(ctx, 17, 10 + bob, "#7afaff", 2);
-  // qi aura
-  ctx.fillStyle = "rgba(120, 200, 255, 0.18)";
-  ctx.beginPath(); ctx.arc(16, 18 + bob, 13, 0, Math.PI * 2); ctx.fill();
-  // fangs
-  ctx.fillStyle = "#fff";
-  pixel(ctx, 14, 14 + bob, "#fff");
-  pixel(ctx, 18, 14 + bob, "#fff");
-}
-
-function drawBeastGui(ctx, frame) {
-  // Hungry ghost: pale wisp body, no legs, hollow eyes
-  const bob = frame ? -2 : 0;
-  ctx.fillStyle = "rgba(140, 200, 230, 0.25)";
-  ctx.beginPath(); ctx.arc(16, 18 + bob, 13, 0, Math.PI * 2); ctx.fill();
-  // wispy tail (instead of legs)
-  ctx.fillStyle = "rgba(200, 220, 240, 0.85)";
-  ctx.beginPath();
-  ctx.moveTo(8, 18 + bob);
-  ctx.quadraticCurveTo(11, 30, 16, 28);
-  ctx.quadraticCurveTo(21, 30, 24, 18 + bob);
-  ctx.closePath();
-  ctx.fill();
-  // body
-  ctx.fillStyle = "#d8e8f0";
-  ctx.beginPath(); ctx.ellipse(16, 18 + bob, 8, 7, 0, 0, Math.PI * 2); ctx.fill();
-  // head (chibi big)
-  ctx.fillStyle = "#c8dce8";
-  ctx.beginPath(); ctx.arc(16, 10 + bob, 7, 0, Math.PI * 2); ctx.fill();
-  // hollow eyes
-  ctx.fillStyle = "#0a0a14";
-  ctx.beginPath(); ctx.arc(13, 10 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(19, 10 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  // eye glow
-  ctx.fillStyle = "#4ad0ff";
-  pixel(ctx, 13, 10 + bob, "#4ad0ff");
-  pixel(ctx, 19, 10 + bob, "#4ad0ff");
-  // gaping mouth
-  ctx.fillStyle = "#1a0a14";
-  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // floating dots
-  ctx.fillStyle = "rgba(180, 220, 255, 0.7)";
-  pixel(ctx, 4, 6, "rgba(180, 220, 255, 0.7)", 2);
-  pixel(ctx, 26, 9, "rgba(180, 220, 255, 0.7)", 2);
-}
-
-function drawBeastJiangshi(ctx, frame) {
-  // Hopping vampire: green face, Qing hat, yellow forehead talisman, stiff arms
-  const bob = frame ? -3 : 0; // hops higher
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28 + (bob ? 1 : 0), 8, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // robe (Qing dynasty dark blue)
-  ctx.fillStyle = "#243a78";
-  ctx.fillRect(10, 18 + bob, 12, 10);
-  ctx.fillStyle = "#3a528a";
-  ctx.fillRect(10, 18 + bob, 12, 1);
-  // sash / sleeves
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(10, 22 + bob, 12, 1);
-  // outstretched stiff arms
-  ctx.fillStyle = "#243a78";
-  ctx.fillRect(2, 17 + bob, 8, 3);
-  ctx.fillRect(22, 17 + bob, 8, 3);
-  ctx.fillStyle = "#9bc28a"; // green hands
-  ctx.fillRect(0, 16 + bob, 3, 4);
-  ctx.fillRect(29, 16 + bob, 3, 4);
-  // head — green
-  ctx.fillStyle = "#9bc28a";
-  ctx.beginPath(); ctx.arc(16, 10 + bob, 7, 0, Math.PI * 2); ctx.fill();
-  // qing dynasty hat
-  ctx.fillStyle = "#1a1410";
-  ctx.beginPath(); ctx.ellipse(16, 4 + bob, 8, 2, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillRect(13, 1 + bob, 6, 4);
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 15, 1 + bob, "#d4a548", 2);
-  // forehead talisman (yellow paper, red sigil)
-  ctx.fillStyle = "#f3e7c9";
-  ctx.fillRect(13, 7 + bob, 6, 4);
-  ctx.fillStyle = "#c43a31";
-  ctx.fillRect(15, 8 + bob, 1, 2);
-  ctx.fillRect(14, 9 + bob, 4, 1);
-  // eyes (dead, white pupils on black)
-  ctx.fillStyle = "#0a0a0a";
-  pixel(ctx, 13, 12 + bob, "#0a0a0a", 2);
-  pixel(ctx, 17, 12 + bob, "#0a0a0a", 2);
-  ctx.fillStyle = "#fff";
-  pixel(ctx, 13, 12 + bob, "#fff");
-  pixel(ctx, 17, 12 + bob, "#fff");
-  // grim mouth
-  ctx.fillStyle = "#3a1410";
-  ctx.fillRect(13, 14 + bob, 6, 1);
-}
-
-function drawBeastHuliJing(ctx, frame) {
-  // Two-tail fox spirit, orange/red with hairpin
-  const bob = frame ? -1 : 0;
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // tails (drawn behind body)
-  ctx.fillStyle = "#e87a40";
-  ctx.beginPath(); ctx.ellipse(8, 19 + bob, 5, 3, -0.3, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(24, 19 + bob, 5, 3, 0.3, 0, Math.PI * 2); ctx.fill();
-  // tail tips white
-  ctx.fillStyle = "#f8e4c0";
-  ctx.beginPath(); ctx.arc(5, 18 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(27, 18 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  // body
-  ctx.fillStyle = "#e87a40";
-  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
-  // belly white
-  ctx.fillStyle = "#f8e4c0";
-  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 4, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#e87a40";
-  ctx.beginPath(); ctx.arc(16, 12 + bob, 7, 0, Math.PI * 2); ctx.fill();
-  // muzzle white
-  ctx.fillStyle = "#f8e4c0";
-  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // ears
-  ctx.fillStyle = "#e87a40";
-  ctx.beginPath();
-  ctx.moveTo(11, 7 + bob); ctx.lineTo(13, 3 + bob); ctx.lineTo(15, 7 + bob); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(17, 7 + bob); ctx.lineTo(19, 3 + bob); ctx.lineTo(21, 7 + bob); ctx.fill();
-  ctx.fillStyle = "#1a1410";
-  ctx.beginPath();
-  ctx.moveTo(12, 6 + bob); ctx.lineTo(13, 4 + bob); ctx.lineTo(14, 6 + bob); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(18, 6 + bob); ctx.lineTo(19, 4 + bob); ctx.lineTo(20, 6 + bob); ctx.fill();
-  // jade hairpin
-  ctx.fillStyle = "#5fae8a";
-  pixel(ctx, 16, 4 + bob, "#5fae8a", 2);
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 17, 3 + bob, "#d4a548");
-  // almond eyes (yellow with red eyeshadow)
-  ctx.fillStyle = "#c43a31";
-  ctx.fillRect(11, 11 + bob, 3, 1);
-  ctx.fillRect(18, 11 + bob, 3, 1);
-  ctx.fillStyle = "#ffd048";
-  pixel(ctx, 12, 12 + bob, "#ffd048", 2);
-  pixel(ctx, 18, 12 + bob, "#ffd048", 2);
-  ctx.fillStyle = "#1a1410";
-  pixel(ctx, 13, 12 + bob, "#1a1410");
-  pixel(ctx, 19, 12 + bob, "#1a1410");
-  // nose
-  ctx.fillStyle = "#1a1410";
-  pixel(ctx, 16, 14 + bob, "#1a1410");
-}
-
-function drawBeastNineTailFox(ctx, frame) {
-  // Boss-tier fox with 5 visible tails fanning out, golden
-  const bob = frame ? -1 : 0;
-  ctx.fillStyle = "rgba(180, 60, 60, 0.2)";
-  ctx.beginPath(); ctx.arc(16, 18 + bob, 16, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.beginPath(); ctx.ellipse(16, 29, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // five tails fanning out from rear (top of sprite, since top-down)
-  const tailColors = ["#ffb84a", "#f8a838", "#ffb84a", "#f8a838", "#ffb84a"];
-  for (let i = 0; i < 5; i++) {
-    const a = (-Math.PI / 2) + (i - 2) * 0.45;
-    const tx = 16 + Math.cos(a) * 11;
-    const ty = 18 + bob + Math.sin(a) * 11;
-    ctx.fillStyle = tailColors[i];
-    ctx.beginPath(); ctx.ellipse(tx, ty, 3, 5, a, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#fff8e0";
-    pixel(ctx, Math.round(tx + Math.cos(a) * 3), Math.round(ty + Math.sin(a) * 3), "#fff8e0", 2);
-  }
-  // body
-  ctx.fillStyle = "#f8a838";
-  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#ffd884";
-  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#f8a838";
-  ctx.beginPath(); ctx.arc(16, 11 + bob, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#ffd884";
-  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // ears
-  ctx.fillStyle = "#f8a838";
-  ctx.beginPath();
-  ctx.moveTo(10, 7 + bob); ctx.lineTo(12, 1 + bob); ctx.lineTo(15, 7 + bob); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(17, 7 + bob); ctx.lineTo(20, 1 + bob); ctx.lineTo(22, 7 + bob); ctx.fill();
-  // glowing red eyes
-  ctx.fillStyle = "#1a1410";
-  ctx.fillRect(10, 10 + bob, 4, 2);
-  ctx.fillRect(18, 10 + bob, 4, 2);
-  ctx.fillStyle = "#ff3030";
-  pixel(ctx, 11, 11 + bob, "#ff3030", 2);
-  pixel(ctx, 19, 11 + bob, "#ff3030", 2);
-  ctx.fillStyle = "#fff8a0";
-  pixel(ctx, 12, 11 + bob, "#fff8a0");
-  pixel(ctx, 20, 11 + bob, "#fff8a0");
-  // crown gem on forehead
-  ctx.fillStyle = "#c43a31";
-  ctx.beginPath(); ctx.arc(16, 7 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#fff";
-  pixel(ctx, 15, 6 + bob, "#fff");
-}
-
-function drawBeastQilin(ctx, frame) {
-  // Mythical chimera: scaled body, flame mane, single horn
-  const bob = frame ? -1 : 0;
-  // aura
-  ctx.fillStyle = "rgba(255, 200, 80, 0.18)";
-  ctx.beginPath(); ctx.arc(16, 18 + bob, 14, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 29, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // body — green-jade scaled
-  ctx.fillStyle = "#3f8a5a";
-  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5fae8a";
-  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 6, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // scale dots
-  ctx.fillStyle = "#2f6b51";
-  pixel(ctx, 11, 21 + bob, "#2f6b51");
-  pixel(ctx, 14, 23 + bob, "#2f6b51");
-  pixel(ctx, 18, 21 + bob, "#2f6b51");
-  pixel(ctx, 21, 23 + bob, "#2f6b51");
-  // hooves
-  ctx.fillStyle = "#1a1410";
-  ctx.fillRect(9, 26 + bob, 3, 3);
-  ctx.fillRect(20, 26 + bob, 3, 3);
-  // flame mane (around neck/head)
-  ctx.fillStyle = "#ff8030";
-  ctx.beginPath(); ctx.arc(16, 14 + bob, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#ffd048";
-  ctx.beginPath(); ctx.arc(16, 14 + bob, 5, 0, Math.PI * 2); ctx.fill();
-  // head
-  ctx.fillStyle = "#3f8a5a";
-  ctx.beginPath(); ctx.arc(16, 11 + bob, 5, 0, Math.PI * 2); ctx.fill();
-  // single horn
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath();
-  ctx.moveTo(15, 7 + bob);
-  ctx.lineTo(16, 1 + bob);
-  ctx.lineTo(17, 7 + bob);
-  ctx.fill();
-  // eyes
-  ctx.fillStyle = "#fff";
-  pixel(ctx, 13, 11 + bob, "#fff", 2);
-  pixel(ctx, 17, 11 + bob, "#fff", 2);
-  ctx.fillStyle = "#1a1410";
-  pixel(ctx, 14, 12 + bob, "#1a1410");
-  pixel(ctx, 18, 12 + bob, "#1a1410");
-  // flame wisps
-  ctx.fillStyle = "rgba(255, 200, 80, 0.7)";
-  ctx.beginPath(); ctx.arc(8, 12 + bob, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(24, 12 + bob, 2, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawBeastDragon(ctx, frame) {
-  // Young dragon: serpentine, gold/red, whiskers
-  const bob = frame ? -1 : 0;
-  // aura
-  ctx.fillStyle = "rgba(255, 60, 60, 0.2)";
-  ctx.beginPath(); ctx.arc(16, 16 + bob, 16, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // long coiled body (drawn as overlapping scales going from rear to front)
-  ctx.fillStyle = "#a82828";
-  ctx.beginPath();
-  ctx.moveTo(2, 26 + bob);
-  ctx.quadraticCurveTo(6, 18 + bob, 12, 22 + bob);
-  ctx.quadraticCurveTo(20, 26 + bob, 26, 16 + bob);
-  ctx.quadraticCurveTo(28, 12 + bob, 24, 8 + bob);
-  ctx.quadraticCurveTo(22, 16 + bob, 16, 18 + bob);
-  ctx.quadraticCurveTo(8, 20 + bob, 2, 30 + bob);
-  ctx.closePath();
-  ctx.fill();
-  // gold scales highlights
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 6, 22 + bob, "#d4a548", 2);
-  pixel(ctx, 12, 20 + bob, "#d4a548", 2);
-  pixel(ctx, 18, 17 + bob, "#d4a548", 2);
-  pixel(ctx, 22, 13 + bob, "#d4a548", 2);
-  // mane along spine
-  ctx.fillStyle = "#ffd048";
-  ctx.fillRect(8, 17 + bob, 1, 3);
-  ctx.fillRect(14, 14 + bob, 1, 3);
-  ctx.fillRect(20, 11 + bob, 1, 3);
-  // claws
-  ctx.fillStyle = "#1a1410";
-  pixel(ctx, 9, 25 + bob, "#1a1410");
-  pixel(ctx, 11, 25 + bob, "#1a1410");
-  pixel(ctx, 17, 21 + bob, "#1a1410");
-  pixel(ctx, 19, 21 + bob, "#1a1410");
-  // head (front)
-  ctx.fillStyle = "#a82828";
-  ctx.beginPath(); ctx.ellipse(24, 8 + bob, 6, 5, -0.3, 0, Math.PI * 2); ctx.fill();
-  // gold horns
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath();
-  ctx.moveTo(22, 4 + bob); ctx.lineTo(20, 0 + bob); ctx.lineTo(24, 3 + bob); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(26, 4 + bob); ctx.lineTo(28, 0 + bob); ctx.lineTo(28, 5 + bob); ctx.fill();
-  // glowing eye
-  ctx.fillStyle = "#ffd048";
-  pixel(ctx, 24, 8 + bob, "#ffd048", 2);
-  ctx.fillStyle = "#1a1410";
-  pixel(ctx, 25, 8 + bob, "#1a1410");
-  // whiskers (long)
-  ctx.strokeStyle = "#ffd048";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(28, 9 + bob); ctx.quadraticCurveTo(31, 12 + bob, 30, 16 + bob);
-  ctx.moveTo(28, 11 + bob); ctx.quadraticCurveTo(32, 14 + bob, 31, 18 + bob);
-  ctx.stroke();
-  // little flames at mouth
-  ctx.fillStyle = "rgba(255, 100, 30, 0.9)";
-  ctx.beginPath(); ctx.arc(30, 6 + bob, 1.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "rgba(255, 200, 80, 0.9)";
-  pixel(ctx, 31, 5 + bob, "rgba(255, 220, 100, 0.9)");
-}
-
-function drawMerchant(ctx) {
-  drawChibi(ctx, {
-    robe: "#7a4a18",
-    sash: "#d4a548",
-    hair: "#3a2a18",
-    accent: "#d4a548",
-    skin: "#e8c898",
-    facing: "down",
-  });
-  // gold coin halo
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 6, 6, "#d4a548", 2);
-  pixel(ctx, 24, 6, "#d4a548", 2);
-}
-
-// ---------- STRUCTURES (32x64 tall, drawn with feet at y=32) ----------
-
-function drawHouse(ctx) {
-  // 96x96 (3x3 tiles)
-  ctx.fillStyle = "#a87a48";
-  ctx.fillRect(8, 30, 80, 50);
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(8, 30, 80, 4);
-  // roof
-  ctx.fillStyle = "#7a1f1a";
-  ctx.beginPath();
-  ctx.moveTo(0, 36);
-  ctx.lineTo(48, 4);
-  ctx.lineTo(96, 36);
-  ctx.lineTo(88, 36);
-  ctx.lineTo(48, 12);
-  ctx.lineTo(8, 36);
-  ctx.closePath();
-  ctx.fill();
-  // upturned eaves (xianxia)
-  ctx.fillStyle = "#5a1410";
-  ctx.beginPath();
-  ctx.moveTo(0, 36); ctx.lineTo(-6, 32); ctx.lineTo(8, 36);
-  ctx.closePath(); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(96, 36); ctx.lineTo(102, 32); ctx.lineTo(88, 36);
-  ctx.closePath(); ctx.fill();
-  // door
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(40, 50, 16, 30);
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 52, 65, "#d4a548", 2);
-  // windows
-  ctx.fillStyle = "#3a78c2";
-  ctx.fillRect(16, 44, 12, 12);
-  ctx.fillRect(68, 44, 12, 12);
-  ctx.strokeStyle = "#d4a548";
-  ctx.strokeRect(16, 44, 12, 12);
-  ctx.strokeRect(68, 44, 12, 12);
-  ctx.beginPath();
-  ctx.moveTo(22, 44); ctx.lineTo(22, 56);
-  ctx.moveTo(16, 50); ctx.lineTo(28, 50);
-  ctx.moveTo(74, 44); ctx.lineTo(74, 56);
-  ctx.moveTo(68, 50); ctx.lineTo(80, 50);
-  ctx.stroke();
-  // banner / sign
-  ctx.fillStyle = "#c43a31";
-  ctx.fillRect(43, 36, 10, 8);
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(45, 38, 6, 4);
-}
-
-function drawHouseUpgraded(ctx) {
-  drawHouse(ctx);
-  // gold trim
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(8, 28, 80, 2);
-  ctx.fillRect(0, 36, 96, 2);
-  // jade tiles on roof
-  ctx.fillStyle = "#5fae8a";
-  for (let i = 0; i < 5; i++) {
-    ctx.fillRect(20 + i * 12, 22, 6, 2);
-  }
-}
-
-function drawMeditationMat(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.beginPath(); ctx.ellipse(16, 26, 13, 4, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c43a31";
-  ctx.beginPath(); ctx.ellipse(16, 22, 13, 6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = "#d4a548";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.ellipse(16, 22, 11, 5, 0, 0, Math.PI * 2); ctx.stroke();
-  // taiji symbol
-  ctx.fillStyle = "#fff";
-  ctx.beginPath(); ctx.arc(16, 22, 4, 0, Math.PI, true); ctx.fill();
-  ctx.fillStyle = "#1a1410";
-  ctx.beginPath(); ctx.arc(16, 22, 4, 0, Math.PI, false); ctx.fill();
-  pixel(ctx, 14, 21, "#1a1410");
-  pixel(ctx, 18, 23, "#fff");
-}
-
-function drawFurnace(ctx) {
-  // pill furnace
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#3a3a3a";
-  ctx.beginPath(); ctx.ellipse(16, 24, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5a3018";
-  ctx.fillRect(8, 12, 16, 14);
-  ctx.fillStyle = "#7a4028";
-  ctx.fillRect(10, 14, 12, 2);
-  // mouth
-  ctx.fillStyle = "#ff7028";
-  ctx.fillRect(13, 18, 6, 6);
-  ctx.fillStyle = "#ffd070";
-  ctx.fillRect(14, 19, 4, 3);
-  // top
-  ctx.fillStyle = "#3a3a3a";
-  ctx.beginPath(); ctx.ellipse(16, 12, 9, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // smoke
-  ctx.fillStyle = "rgba(180, 180, 180, 0.6)";
-  ctx.beginPath(); ctx.arc(14, 8, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(18, 5, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(15, 2, 1.5, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawTalismanDesk(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // desk legs
-  ctx.fillStyle = "#5a3018";
-  ctx.fillRect(4, 18, 3, 12);
-  ctx.fillRect(25, 18, 3, 12);
-  // top
-  ctx.fillStyle = "#a87a48";
-  ctx.fillRect(2, 14, 28, 6);
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(2, 14, 28, 1);
-  // talisman papers
-  ctx.fillStyle = "#f3e7c9";
-  ctx.fillRect(6, 8, 6, 8);
-  ctx.fillRect(14, 6, 6, 9);
-  ctx.fillRect(22, 9, 6, 7);
-  // ink/runes on papers
-  ctx.fillStyle = "#c43a31";
-  pixel(ctx, 8, 11, "#c43a31", 2);
-  pixel(ctx, 16, 9, "#c43a31", 2);
-  pixel(ctx, 24, 12, "#c43a31", 2);
-  // brush
-  ctx.fillStyle = "#1a1410";
-  ctx.fillRect(20, 16, 8, 1);
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(28, 15, 3, 3);
-}
-
-function drawBed(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5a3018";
-  ctx.fillRect(4, 12, 24, 18);
-  ctx.fillStyle = "#c43a31";
-  ctx.fillRect(6, 14, 20, 14);
-  ctx.fillStyle = "#f0e0c0";
-  ctx.fillRect(7, 14, 8, 5);
-  // gold trim
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(4, 12, 24, 1);
-  ctx.fillRect(4, 28, 24, 1);
-}
-
-function drawWell(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#7a7670";
-  ctx.beginPath(); ctx.ellipse(16, 22, 11, 6, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#3a78c2";
-  ctx.beginPath(); ctx.ellipse(16, 20, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5a5650";
-  ctx.fillRect(4, 8, 2, 14);
-  ctx.fillRect(26, 8, 2, 14);
-  ctx.fillRect(4, 6, 24, 2);
-  // bucket
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(13, 8, 6, 5);
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(13, 8, 6, 1);
-}
-
-function drawHerb(ctx) {
-  // foragable herb on grass
+function drawHerbTile(ctx) {
   drawGrassTile(ctx);
-  ctx.fillStyle = "#3a8a4a";
-  ctx.fillRect(15, 18, 2, 10);
-  ctx.fillStyle = "#5fae8a";
-  ctx.beginPath(); ctx.arc(13, 16, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(19, 16, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(16, 12, 4, 0, Math.PI * 2); ctx.fill();
-  // glowing flower (spirit herb)
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath(); ctx.arc(16, 10, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "rgba(212, 165, 72, 0.3)";
-  ctx.beginPath(); ctx.arc(16, 10, 5, 0, Math.PI * 2); ctx.fill();
+  const palH = {
+    s: "#3a6826",
+    g: "#5e9442",
+    L: "#bbe190",
+    f: "#f0c878",
+    F: "#fde4ea",
+  };
+  const herb = [
+    "................",
+    "................",
+    "................",
+    ".......f........",
+    "......fFf.......",
+    ".....fFFFf......",
+    "......LfL.......",
+    "......sgs.......",
+    ".....gGgGg......",
+    ".....gLgLg......",
+    "......gsg.......",
+    "......sgs.......",
+    "................",
+    "................",
+    "................",
+    "................",
+  ];
+  drawSprite(ctx, herb, palH);
 }
 
-function drawStove(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // brick body
-  ctx.fillStyle = "#8a4a28";
-  ctx.fillRect(6, 12, 20, 16);
-  ctx.strokeStyle = "#5a2a18";
-  for (let y = 14; y <= 24; y += 4) {
-    ctx.beginPath();
-    ctx.moveTo(6, y);
-    ctx.lineTo(26, y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(y % 8 === 0 ? 11 : 16, y);
-    ctx.lineTo(y % 8 === 0 ? 11 : 16, y + 4);
-    ctx.stroke();
+// ===========================================================================
+// CROPS (transparent overlay; tilled tile shows through)
+// ===========================================================================
+
+function buildCropSprite(stage, fruitColor, fruitGlow) {
+  const c = makeCanvas(TILE, TILE);
+  const ctx = c.getContext("2d");
+  const palette = {
+    s: "#3a6826",        // stem dark
+    g: "#5e9442",        // leaf mid
+    L: "#bbe190",        // leaf highlight
+    o: "#1d3a1a",        // outline
+    f: fruitColor,
+    F: fruitGlow,
+  };
+  let lines;
+  if (stage === 0) {
+    lines = [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "......oLo.......",
+      "......oso.......",
+      ".......o........",
+      "................",
+      "................",
+    ];
+  } else if (stage === 1) {
+    lines = [
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      ".....oLo........",
+      "....oLgLo.......",
+      ".....oso........",
+      ".....oso..oLo...",
+      "....oLgLooLgLo..",
+      ".....oso..oso...",
+      "......o....s....",
+      ".......os.so....",
+      "................",
+      "................",
+    ];
+  } else {
+    lines = [
+      "................",
+      "................",
+      "................",
+      "....offo..offo..",
+      "...offFffooffFf.",
+      "....offo..offo..",
+      ".......offo.....",
+      "......offFf.....",
+      ".......offo.....",
+      ".....oLgLo......",
+      ".....oggLo......",
+      "....oLgGgLo.....",
+      ".....oso........",
+      "......oso.......",
+      ".......o........",
+      "................",
+    ];
   }
-  // wok on top
-  ctx.fillStyle = "#3a3a3a";
-  ctx.beginPath(); ctx.ellipse(16, 12, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5a5a5a";
-  ctx.fillRect(7, 11, 18, 1);
-  // mouth (fire)
-  ctx.fillStyle = "#1a1410";
-  ctx.fillRect(11, 17, 10, 7);
-  ctx.fillStyle = "#ff7028";
-  ctx.fillRect(13, 19, 6, 4);
-  ctx.fillStyle = "#ffd070";
-  ctx.fillRect(14, 20, 4, 2);
-  // smoke wisps
-  ctx.fillStyle = "rgba(180,180,180,0.6)";
-  ctx.beginPath(); ctx.arc(15, 8, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(18, 5, 1.5, 0, Math.PI * 2); ctx.fill();
+  drawSprite(ctx, lines, palette);
+  return c;
 }
 
-function drawForge(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // hearth box behind anvil
-  ctx.fillStyle = "#5a3018";
-  ctx.fillRect(7, 4, 18, 14);
-  ctx.fillStyle = "#7a4028";
-  ctx.fillRect(7, 4, 18, 2);
-  // chimney
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(13, -1, 6, 6);
-  ctx.fillStyle = "rgba(180,180,180,0.6)";
-  ctx.beginPath(); ctx.arc(16, -2, 2, 0, Math.PI * 2); ctx.fill();
-  // fire inside hearth
-  ctx.fillStyle = "#ff7028";
-  ctx.fillRect(10, 8, 12, 7);
-  ctx.fillStyle = "#ffd070";
-  ctx.fillRect(12, 10, 8, 4);
-  ctx.fillStyle = "#fff5c0";
-  ctx.fillRect(14, 11, 4, 2);
-  // anvil
-  ctx.fillStyle = "#5a5a5a";
-  ctx.fillRect(8, 20, 16, 4);
-  ctx.fillStyle = "#7a7a7a";
-  ctx.fillRect(4, 18, 24, 3);
-  ctx.fillStyle = "#3a3a3a";
-  ctx.fillRect(10, 24, 12, 4);
-  // hammer resting on anvil
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(20, 12, 1, 7);
-  ctx.fillStyle = "#5a5a5a";
-  ctx.fillRect(18, 12, 5, 2);
-  // sparks
-  ctx.fillStyle = "rgba(255, 240, 100, 0.8)";
-  pixel(ctx, 12, 17, "rgba(255, 240, 100, 0.8)");
-  pixel(ctx, 22, 16, "rgba(255, 240, 100, 0.8)");
+// ===========================================================================
+// PLAYER — chibi jade-hanfu cultivator (per design deck)
+// ===========================================================================
+
+const PLAYER_PAL = {
+  o: "#2a221b",        // outline / hair
+  H: "#1a120c",        // dark hair
+  h: "#2a1f15",        // mid hair
+  s: "#f5d4a8",        // skin
+  S: "#dab488",        // skin shade
+  e: "#2a221b",        // eye
+  m: "#a85040",        // mouth
+  r: "#7fbf95",        // jade robe mid
+  R: "#4d8c66",        // jade robe shadow
+  l: "#b6e5b9",        // jade robe highlight
+  W: "#fbf6e8",        // sash white
+  w: "#dac8a4",        // sash shade
+  y: "#d4a548",        // gold trim
+  p: "#3a2818",        // pants
+  k: "#1a1410",        // shoes
+  d: "rgba(36,28,20,0.3)", // ground shadow
+};
+
+// 16x16 logical body; feet near row 13.
+const PLAYER_DOWN_0 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHo....",
+  "...oHHhhhHhHo...",
+  "...ohssssssho...",
+  "...osseesseeso..",
+  "...osssssssso...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....orrrwrro....",
+  "...orrwwWwwrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  "....opp..ppo....",
+  "....okk..kko....",
+  "....dddddddd....",
+];
+const PLAYER_DOWN_1 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHo....",
+  "...oHHhhhHhHo...",
+  "...ohssssssho...",
+  "...osseesseeso..",
+  "...osssssssso...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....orrrwrro....",
+  "...orrwwWwwrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  "....opp...ppo...",
+  "....okk....kko..",
+  "....dddddddd....",
+];
+
+const PLAYER_UP_0 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHo....",
+  "...oHHHHHHHHo...",
+  "...oHHhhhhHHo...",
+  "...oHHHHHHHHo...",
+  "...oHHHHHHHHo...",
+  "....oHHHHHHo....",
+  ".....osssso.....",
+  "....orrwwrro....",
+  "...orrwwWwwrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  "....opp..ppo....",
+  "....okk..kko....",
+  "....dddddddd....",
+];
+const PLAYER_UP_1 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHo....",
+  "...oHHHHHHHHo...",
+  "...oHHhhhhHHo...",
+  "...oHHHHHHHHo...",
+  "...oHHHHHHHHo...",
+  "....oHHHHHHo....",
+  ".....osssso.....",
+  "....orrwwrro....",
+  "...orrwwWwwrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  "....opp...ppo...",
+  "....okk....kko..",
+  "....dddddddd....",
+];
+
+const PLAYER_RIGHT_0 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHHo...",
+  "...oHHhhhhHHo...",
+  "...ohssssHHHo...",
+  "...osssseeHHo...",
+  "...osssssHHHo...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....orrwwrro....",
+  "...orrwWwwrrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  "....opppppo.....",
+  "....okkkko......",
+  "....dddddddd....",
+];
+const PLAYER_RIGHT_1 = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHHo...",
+  "...oHHhhhhHHo...",
+  "...ohssssHHHo...",
+  "...osssseeHHo...",
+  "...osssssHHHo...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....orrwwrro....",
+  "...orrwWwwrrro..",
+  "...orrwwwwwrro..",
+  "...orrrrrrrrro..",
+  ".....opppppo....",
+  ".....okkkko.....",
+  "....dddddddd....",
+];
+
+// Mirror for left/right done at draw-time would be cleaner but our renderer
+// doesn't flip. We keep symmetric data.
+const PLAYER_LEFT_0 = PLAYER_RIGHT_0.map(row =>
+  row.split("").reverse().join("")
+);
+const PLAYER_LEFT_1 = PLAYER_RIGHT_1.map(row =>
+  row.split("").reverse().join("")
+);
+
+function buildPlayerSprite(lines) {
+  const c = makeCanvas(TILE, TILE);
+  drawSprite(c.getContext("2d"), lines, PLAYER_PAL);
+  return c;
 }
 
-function drawLoom(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // wooden frame
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(4, 4, 3, 24);
-  ctx.fillRect(25, 4, 3, 24);
-  ctx.fillRect(4, 4, 24, 3);
-  ctx.fillRect(4, 25, 24, 3);
-  // vertical warp threads
-  ctx.strokeStyle = "#f3e7c9";
-  ctx.lineWidth = 1;
-  for (let x = 9; x <= 23; x += 2) {
-    ctx.beginPath();
-    ctx.moveTo(x, 7);
-    ctx.lineTo(x, 25);
-    ctx.stroke();
+// ===========================================================================
+// BEASTS
+// ===========================================================================
+
+const BEAST_BASE_PAL = {
+  o: "#2a221b",
+  d: "rgba(36,28,20,0.32)",
+};
+
+// Build a beast sprite from a per-creature palette + bitmap.
+function buildBeastFrame(palette, lines) {
+  const c = makeCanvas(TILE, TILE);
+  drawSprite(c.getContext("2d"), lines, palette);
+  return c;
+}
+
+// Spirit Rabbit — soft grey-white with red eyes.
+const RABBIT_PAL = {
+  o: "#2a221b",
+  W: "#f3ede0",
+  w: "#cbc4b0",
+  p: "#f4b6c2",
+  R: "#c43a31",
+  d: "rgba(36,28,20,0.3)",
+};
+const RABBIT_0 = [
+  "................",
+  "................",
+  "................",
+  "....op....po....",
+  "...oWpo..oWpo...",
+  "...oWpo..oWpo...",
+  "....oWooooWo....",
+  "...oWWWwwWWWo...",
+  "...oWRwwwwRWo...",
+  "...oWWwwwwWWo...",
+  "....oWWWWWWo....",
+  ".....oWWWWo.....",
+  "....oWoooWo.....",
+  "....do..do......",
+  "....dddddddd....",
+  "................",
+];
+const RABBIT_1 = [
+  "................",
+  "................",
+  "....op....po....",
+  "...oWpo..oWpo...",
+  "...oWpo..oWpo...",
+  "....oWooooWo....",
+  "...oWWWwwWWWo...",
+  "...oWRwwwwRWo...",
+  "...oWWwwwwWWo...",
+  "....oWWWWWWo....",
+  ".....oWWWWo.....",
+  "....oWoooWo.....",
+  "................",
+  "....do..do......",
+  "....dddddddd....",
+  "................",
+];
+
+const BOAR_PAL = {
+  o: "#2a221b",
+  D: "#5a3a1a",
+  M: "#7a5530",
+  L: "#a47a4a",
+  W: "#fbf6e8",
+  R: "#ff8030",
+  d: "rgba(36,28,20,0.32)",
+};
+const BOAR_0 = [
+  "................",
+  "................",
+  "................",
+  "....oooo........",
+  "...oDMMDo.......",
+  "...oMRRMo.......",
+  "...oMMMMooooo...",
+  "..oWoMDDMMMMMo..",
+  "..oDoMMMMLLMMo..",
+  "...oMMMMMMMMo...",
+  "...oMMMLMMMo....",
+  "....oMMLMMo.....",
+  "....oo.oo.......",
+  "....DD.DD.......",
+  "....dddddddd....",
+  "................",
+];
+const BOAR_1 = [
+  "................",
+  "................",
+  "....oooo........",
+  "...oDMMDo.......",
+  "...oMRRMo.......",
+  "...oMMMMooooo...",
+  "..oWoMDDMMMMMo..",
+  "..oDoMMMMLLMMo..",
+  "...oMMMMMMMMo...",
+  "...oMMMLMMMo....",
+  "....oMMLMMo.....",
+  "....oo.oo.......",
+  "....DD.DD.......",
+  "................",
+  "....dddddddd....",
+  "................",
+];
+
+const WOLF_PAL = {
+  o: "#2a221b",
+  D: "#3b3a4d",
+  M: "#5a596d",
+  L: "#7a7a90",
+  C: "#9adfee",
+  W: "#fbf6e8",
+  d: "rgba(36,28,20,0.32)",
+};
+const WOLF_0 = [
+  "................",
+  "................",
+  ".....oo..oo.....",
+  "....oDDooDDo....",
+  "....oDMooMDo....",
+  "....oMMMMMMo....",
+  "....oCMooMCo....",
+  "...oWoMMMMoWo...",
+  "...oDoMMMMoDo...",
+  "..oMMMMLLMMMMo..",
+  "..oMMMMMMMMMMo..",
+  "...oMMMMMMMMo...",
+  "....ooo..ooo....",
+  "....DD....DD....",
+  "....dddddddd....",
+  "................",
+];
+const WOLF_1 = [
+  "................",
+  ".....oo..oo.....",
+  "....oDDooDDo....",
+  "....oDMooMDo....",
+  "....oMMMMMMo....",
+  "....oCMooMCo....",
+  "...oWoMMMMoWo...",
+  "...oDoMMMMoDo...",
+  "..oMMMMLLMMMMo..",
+  "..oMMMMMMMMMMo..",
+  "...oMMMMMMMMo...",
+  "....ooo..ooo....",
+  "....DD....DD....",
+  "................",
+  "....dddddddd....",
+  "................",
+];
+
+// Hungry Ghost (gui) — pale wisp, hollow eyes.
+const GUI_PAL = {
+  o: "#2a221b",
+  W: "#dbe6ee",
+  w: "#9eb3c0",
+  E: "#000000",
+  C: "#7afaff",
+  G: "rgba(120, 200, 255, 0.18)",
+  d: "rgba(36,28,20,0.25)",
+};
+const GUI_0 = [
+  "................",
+  ".......GG.......",
+  "......GGGG......",
+  ".....oWWWWo.....",
+  "....oWWwwWWo....",
+  "....oWEEEEWo....",
+  "....oWCEECWo....",
+  "....oWwwwwWo....",
+  "....oWWEEWWo....",
+  "....oWWWWWWo....",
+  ".....oWwwWo.....",
+  "....oWoooWo.....",
+  "....oWoooWo.....",
+  ".....oooo.......",
+  "................",
+  "................",
+];
+const GUI_1 = [
+  "................",
+  "................",
+  ".......GG.......",
+  "......GGGG......",
+  ".....oWWWWo.....",
+  "....oWWwwWWo....",
+  "....oWEEEEWo....",
+  "....oWCEECWo....",
+  "....oWwwwwWo....",
+  "....oWWEEWWo....",
+  "....oWWWWWWo....",
+  ".....oWwwWo.....",
+  "....oWoooWo.....",
+  "....oWoooWo.....",
+  ".....oooo.......",
+  "................",
+];
+
+// Jiangshi — green face, Qing hat, yellow forehead seal, blue robe.
+const JIANGSHI_PAL = {
+  o: "#2a221b",
+  S: "#9bc28a",          // skin green
+  s: "#7ca870",          // skin shadow
+  H: "#1a1410",          // hat black
+  Y: "#f3e7c9",          // talisman paper
+  y: "#c43a31",          // talisman ink
+  R: "#243a78",          // robe blue
+  r: "#3a528a",          // robe highlight
+  G: "#d4a548",          // gold trim
+  W: "#fbf6e8",
+  d: "rgba(36,28,20,0.32)",
+};
+const JIANGSHI_0 = [
+  "................",
+  "....HHHHHH......",
+  "...HHGGGGHH.....",
+  "....HHHHHH......",
+  "....oSYYSo......",
+  "....oSyySo......",
+  "....oSYYSo......",
+  "...oSooooSo.....",
+  "...oSeoeeoSo....",
+  "...oRRRRRRRo....",
+  "..oWGRRrrRGWo...",
+  "..oWoRRRRRoWo...",
+  "...oRRRRRRRo....",
+  "....oo..oo......",
+  "....HH..HH......",
+  "....dddddddd....",
+];
+const JIANGSHI_1 = [
+  "....HHHHHH......",
+  "...HHGGGGHH.....",
+  "....HHHHHH......",
+  "....oSYYSo......",
+  "....oSyySo......",
+  "....oSYYSo......",
+  "...oSooooSo.....",
+  "...oSeoeeoSo....",
+  "...oRRRRRRRo....",
+  "..oWGRRrrRGWo...",
+  "..oWoRRRRRoWo...",
+  "...oRRRRRRRo....",
+  "....oo..oo......",
+  "....HH..HH......",
+  "................",
+  "....dddddddd....",
+];
+
+// Huli Jing — orange-and-white two-tail fox spirit.
+const HULI_PAL = {
+  o: "#2a221b",
+  O: "#e07a30",
+  M: "#bd5a18",
+  W: "#f7e0c8",
+  D: "#7a3a10",
+  Y: "#ffd048",
+  J: "#7fbf95",
+  R: "#c43a31",
+  d: "rgba(36,28,20,0.32)",
+};
+const HULI_0 = [
+  "................",
+  "................",
+  "....oo....oo....",
+  "...oOMo..oOMo...",
+  "...oOOoooOOo....",
+  "....oOJJOOo.....",   // jade hairpin J
+  "...oOOYOOOOo....",
+  "...oOWoooWOo....",
+  "...oOWeeeWOo....",   // amber eyes
+  "....oOWOOWOo....",
+  "...oOOWWWWOo....",
+  "..oOOOOOOOOOo...",
+  ".oOMOMMOMMOMOo..",   // body with belly
+  "..oWWWWWWWWWWo..",
+  ".oOoO....OoOo...",
+  "....dddddddd....",
+];
+const HULI_1 = [
+  "................",
+  "....oo....oo....",
+  "...oOMo..oOMo...",
+  "...oOOoooOOo....",
+  "....oOJJOOo.....",
+  "...oOOYOOOOo....",
+  "...oOWoooWOo....",
+  "...oOWeeeWOo....",
+  "....oOWOOWOo....",
+  "...oOOWWWWOo....",
+  "..oOOOOOOOOOo...",
+  ".oOMOMMOMMOMOo..",
+  "..oWWWWWWWWWWo..",
+  ".oOoO....OoOo...",
+  "................",
+  "....dddddddd....",
+];
+
+// Nine-tail fox boss — golden, multi-tail aura.
+const NINE_PAL = {
+  o: "#2a221b",
+  G: "#f3a838",
+  M: "#d48330",
+  W: "#fff5d8",
+  D: "#7a3a10",
+  R: "#ff3030",
+  Y: "#fff8a0",
+  A: "rgba(212,165,72,0.18)",
+  d: "rgba(36,28,20,0.4)",
+};
+const NINE_0 = [
+  "................",
+  "..GGAGAGAGAGGGG.",
+  ".AGoGoooGoGoGoA.",
+  "..GGAGoooooAGGG.",
+  "....oo....oo....",
+  "...oGMo..oGMo...",
+  "...oGGooooGGo...",
+  "...oGGRoooRGGo..",
+  "..oGGGYRRYGGGo..",
+  "..oGGGGGGGGGGo..",
+  ".oGWWWGGGGWWWGo.",
+  "..oGGGGGGGGGGo..",
+  "...oGGoo..ooGGo.",
+  "....DD....DD....",
+  "................",
+  "....dddddddd....",
+];
+const NINE_1 = [
+  "..GGAGAGAGAGGGG.",
+  ".AGoGoooGoGoGoA.",
+  "..GGAGoooooAGGG.",
+  "....oo....oo....",
+  "...oGMo..oGMo...",
+  "...oGGooooGGo...",
+  "...oGGRoooRGGo..",
+  "..oGGGYRRYGGGo..",
+  "..oGGGGGGGGGGo..",
+  ".oGWWWGGGGWWWGo.",
+  "..oGGGGGGGGGGo..",
+  "...oGGoo..ooGGo.",
+  "....DD....DD....",
+  "................",
+  "................",
+  "....dddddddd....",
+];
+
+// Qilin — jade-scaled chimera with golden flame mane and single horn.
+const QILIN_PAL = {
+  o: "#2a221b",
+  J: "#3f8a5a",
+  j: "#5fae8a",
+  L: "#b6e5b9",
+  G: "#d4a548",
+  F: "#ff8030",
+  Y: "#ffd070",
+  W: "#fbf6e8",
+  d: "rgba(36,28,20,0.36)",
+};
+const QILIN_0 = [
+  "................",
+  "......G.........",
+  "......G.........",
+  ".....FYF........",
+  "....FFYFF.......",
+  "...FYJJYF.......",
+  "..FYJWoWJF......",
+  "..FYJJoJJF......",
+  "...oJjjjJo......",
+  "..oJJjLLjJJo....",
+  ".oLJjjjLJjjJLo..",
+  ".oJjLjjjjLjjJo..",
+  "..oJJjLjLjJJo...",
+  "....oo....oo....",
+  "....HH....HH....",
+  "....dddddddd....",
+];
+const QILIN_1 = [
+  "......G.........",
+  "......G.........",
+  ".....FYF........",
+  "....FFYFF.......",
+  "...FYJJYF.......",
+  "..FYJWoWJF......",
+  "..FYJJoJJF......",
+  "...oJjjjJo......",
+  "..oJJjLLjJJo....",
+  ".oLJjjjLJjjJLo..",
+  ".oJjLjjjjLjjJo..",
+  "..oJJjLjLjJJo...",
+  "....oo....oo....",
+  "....HH....HH....",
+  "................",
+  "....dddddddd....",
+];
+
+// Young Dragon — coiled red-gold with whiskers.
+const DRAGON_PAL = {
+  o: "#2a221b",
+  R: "#a82828",
+  M: "#7e1a1a",
+  G: "#d4a548",
+  Y: "#ffd048",
+  W: "#fbf6e8",
+  A: "rgba(212,40,40,0.18)",
+  d: "rgba(36,28,20,0.4)",
+};
+const DRAGON_0 = [
+  "AAAAAAAAAAAAAAAA",
+  "A...........GGAA",
+  "A.........oRRRGA",
+  "A........oRMRYRG",
+  "A.......oRRYoRRA",
+  "A.....oRRMRYRRoY",  // whiskers tail-end
+  "A....oRRMMMRRoYY",
+  "A...oRRMRRMRRoYA",
+  "A...oRRRMRMRRoYA",
+  "A....oRRMMMMRoAA",
+  "A.....oRRRRRRoAA",
+  "A.....oRRMMRMoAA",
+  "A...oRRMRMRMRoAA",
+  "A..oRRRMRMRMRoAA",
+  "A...oo....oo.AAA",
+  "....dddddddd....",
+];
+const DRAGON_1 = [
+  "AAAAAAAAAAAAAAAA",
+  "A...........GGAA",
+  "A.........oRRRGA",
+  "A........oRMRYRG",
+  "A.......oRRYoRRA",
+  "A.....oRRMRYRRoY",
+  "A....oRRMMMRRoYY",
+  "A...oRRMRRMRRoYA",
+  "A...oRRRMRMRRoYA",
+  "A....oRRMMMMRoAA",
+  "A.....oRRRRRRoAA",
+  "A.....oRRMMRMoAA",
+  "A...oRRMRMRMRoAA",
+  "A..oRRRMRMRMRoAA",
+  "A....oo....oo.AA",
+  "....dddddddd....",
+];
+
+// ===========================================================================
+// MERCHANT (chibi in warm wood-brown hanfu)
+// ===========================================================================
+const MERCHANT_PAL = {
+  o: "#2a221b",
+  H: "#1a120c",
+  h: "#3a2818",
+  s: "#f3d4a0",
+  e: "#2a221b",
+  m: "#a85040",
+  R: "#7e5837",        // wooden-brown robe
+  r: "#5a3a1a",
+  L: "#d4b577",
+  W: "#fbf6e8",
+  Y: "#d4a548",
+  k: "#1a1410",
+  d: "rgba(36,28,20,0.32)",
+};
+const MERCHANT = [
+  "................",
+  ".....oooooo.....",
+  "....oHHHHHHo....",
+  "...oHHhhhhHo....",
+  "...ohsssssho....",
+  "...osseesseso...",
+  "...osssssssso...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....oRRRWRRo....",
+  "...oRrLWWWLrRo..",
+  "...oRrYWWWYrRo..",
+  "...oRRRRRRRRRo..",
+  "....okk..kko....",
+  "....okk..kko....",
+  "....dddddddd....",
+];
+
+// ===========================================================================
+// COMPANION PARTNER (chibi in peach-blossom hanfu)
+// ===========================================================================
+const PARTNER_PAL = {
+  o: "#2a221b",
+  H: "#1a120c",
+  h: "#3a2818",
+  s: "#f5d4a8",
+  e: "#2a221b",
+  m: "#c43a31",
+  R: "#f4b6c2",        // peach blossom robe
+  r: "#e08aa0",
+  L: "#fde4ea",
+  W: "#fbf6e8",
+  Y: "#d4a548",
+  J: "#7fbf95",        // jade hairpin
+  k: "#1a1410",
+  d: "rgba(36,28,20,0.32)",
+};
+const PARTNER_0 = [
+  "................",
+  ".....oooooo.....",
+  "....oHJHHHHo....",
+  "...oHHhhhhHo....",
+  "...ohsssssho....",
+  "...osseesseso...",
+  "...osssssssso...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....oRRRWRRo....",
+  "...oRrLWWWLrRo..",
+  "...oRrYWWWYrRo..",
+  "...oRRRRRRRRRo..",
+  "....opp..ppo....",
+  "....okk..kko....",
+  "....dddddddd....",
+];
+const PARTNER_1 = [
+  "................",
+  ".....oooooo.....",
+  "....oHJHHHHo....",
+  "...oHHhhhhHo....",
+  "...ohsssssho....",
+  "...osseesseso...",
+  "...osssssssso...",
+  "....osssmsso....",
+  ".....osssso.....",
+  "....oRRRWRRo....",
+  "...oRrLWWWLrRo..",
+  "...oRrYWWWYrRo..",
+  "...oRRRRRRRRRo..",
+  "....opp...ppo...",
+  "....okk....kko..",
+  "....dddddddd....",
+];
+PARTNER_PAL.p = "#3a2818";
+
+// ===========================================================================
+// STRUCTURES (variable size — each builds its own canvas)
+// ===========================================================================
+
+// Helper: build a fresh canvas of the given logical size and run drawer.
+function buildStruct(logicalW, logicalH, drawer) {
+  const c = makeCanvas(logicalW * PXSCALE, logicalH * PXSCALE);
+  drawer(c.getContext("2d"));
+  return c;
+}
+
+// House — pagoda with upturned jade-tile roof. 48x48 logical = 96x96 actual.
+const HOUSE_PAL = {
+  o: "#2a221b",
+  J: "#5e9070",      // jade tile mid
+  j: "#3a6b51",      // jade tile shadow
+  L: "#a8d6b0",      // jade tile highlight
+  W: "#a87a48",      // wood wall
+  w: "#7e5837",      // wood shadow
+  X: "#d4a675",      // wood highlight
+  D: "#3a2010",      // door
+  Y: "#d4a548",      // gold trim / banner
+  R: "#c43a31",      // banner red
+  G: "#7fbf95",      // jade accent
+  P: "#fbf6e8",      // paper window
+  B: "#5d96cf",      // window blue
+  s: "rgba(36,28,20,0.3)", // shadow
+};
+const HOUSE = [
+  "................................................",
+  "................................................",
+  "................oo..............oo..............",
+  "...............oJJoo..........ooJJo..............",
+  "............ooJjjJJoo........ooJJjjJoo...........",
+  "..........ooJjjLLjJJoooooooooJJjLLjjJoo..........",
+  ".........oJJjjLLjjJJjjjjjjjjJJjjLLjjJJo..........",
+  "........oJJLLJjjJJjLjLjLjLjLJJjjjJLLJJo..........",
+  ".......ooJJjjJJjjJJjjjjjjjjJJjjJJjjJJoo..........",
+  "......ooJJjjjjJJJJJJJJJJJJJJJJJJjjjjJJoo.........",
+  ".....ooooooooooooooooooooooooooooooooooooo.......",
+  ".....oYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYo.......",
+  ".....oWWWWWWWWWWWWRRRRRRRRRWWWWWWWWWWWWWWo.......",
+  ".....oWXXWWWWXWWWWRYYYYYYRWWWWXWXWWWWXXWWo.......",
+  ".....oWWWBBWWWWWWWRYYYYYYRWWWWWWWBBWWWWWWo.......",
+  ".....oWXBBBBWWWWWWRYRYRYRRWWWWWWWBBBBXWWWo.......",
+  ".....oWWBBPBWWWWWWRYYYYYYRWWWWWWWBBPBWWWWo.......",
+  ".....oWWBBBBWWWWWWWWDDDDDWWWWWWWWBBBBWWWWo.......",
+  ".....oWWWWWWWWWWWWWWDDDDDWWWWWWWWWWWWWWWWo.......",
+  ".....oWXWWWXWWWWWWWWDDYDDWWWWWWWWWXWWWXWWo.......",
+  ".....oWWWWWWWWWWWWWWDDDDDWWWWWWWWWWWWWWWWo.......",
+  ".....oWXWWWWWWWWWWWWDDDDDWWWWWWWWWWWWWXWWo.......",
+  ".....ooooooooooooooooooooooooooooooooooooo.......",
+  ".....sssssssssssssssssssssssssssssssssssss.......",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+  "................................................",
+];
+
+// Upgraded house — adds a second roof tier + pink lanterns.
+const HOUSE_UPGRADED = HOUSE.map((row, y) => {
+  // No-op: we'll patch it post-build for the upgraded look.
+  return row;
+});
+
+function patchUpgradedHouse(ctx) {
+  // hang two pink lanterns at the eaves
+  pxRect(ctx, 4, 11, 1, 5, "#3a2010");
+  pxRect(ctx, 3, 16, 3, 3, "#f4b6c2");
+  pxRect(ctx, 4, 19, 1, 1, "#d4a548");
+  pxRect(ctx, 43, 11, 1, 5, "#3a2010");
+  pxRect(ctx, 42, 16, 3, 3, "#f4b6c2");
+  pxRect(ctx, 43, 19, 1, 1, "#d4a548");
+  // jade roof crest highlight
+  for (let x = 12; x < 36; x += 2) {
+    px(ctx, x, 11, "#a8d6b0");
   }
-  // partial purple fabric at bottom (woven)
-  ctx.fillStyle = "#a85ac0";
-  ctx.fillRect(7, 17, 18, 8);
-  ctx.fillStyle = "#c890e0";
-  for (let y = 17; y < 25; y += 2) {
-    ctx.fillRect(7, y, 18, 1);
-  }
-  // shuttle
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(20, 15, 6, 2);
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 25, 15, "#d4a548");
-  // thread spools at top
-  ctx.fillStyle = "#c890e0";
-  ctx.beginPath(); ctx.arc(11, 6, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5fae8a";
-  ctx.beginPath(); ctx.arc(21, 6, 2, 0, Math.PI * 2); ctx.fill();
 }
 
-function drawFishingBobber(ctx) {
-  // 16x16 — a small red-and-white float
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.arc(8, 12, 4, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c43a31";
-  ctx.beginPath(); ctx.arc(8, 8, 4, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#f3e7c9";
-  ctx.beginPath(); ctx.arc(8, 8, 4, Math.PI, 0); ctx.fill();
-  ctx.fillStyle = "#1a1410";
-  ctx.fillRect(7, 4, 2, 1);
-}
+// Meditation mat — round red mat with taiji symbol.
+const MAT_PAL = {
+  o: "#2a221b",
+  R: "#c43a31",
+  M: "#7a1f1a",
+  Y: "#d4a548",
+  W: "#fbf6e8",
+  K: "#1a1410",
+  d: "rgba(36,28,20,0.32)",
+};
+const MAT = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "....ooooooooo...",
+  "...oRMMRMMMMRo..",
+  "..oRYYYYYYYYYRo.",
+  "..oMYWWoooKKYMo.",
+  "..oMYWooooKKYMo.",
+  "..oRYYYYYYYYYRo.",
+  "...oMRRRRRRRMo..",
+  "....ooooooooo...",
+  ".....dddddd.....",
+  "................",
+  "................",
+];
 
-// ---------- COMPANION ----------
-function drawCompanionPartner(ctx, frame) {
-  drawChibi(ctx, {
-    robe: "#7a3a72",
-    sash: "#d4a548",
-    skin: "#f0d2a8",
-    hair: "#1a1410",
-    accent: "#5fae8a",
-    bob: frame ? -1 : 0,
-    facing: "down",
-  });
-  // small jade hairpin
-  ctx.fillStyle = "#5fae8a";
-  pixel(ctx, 16, 4 + (frame ? -1 : 0), "#5fae8a", 2);
-}
+// Well — stone rim, water, wooden bucket.
+const WELL_PAL = {
+  o: "#2a221b",
+  S: "#9a948c",
+  s: "#5a544c",
+  L: "#bdb6ad",
+  B: "#5d96cf",
+  W: "#a4c8e8",
+  D: "#3a2010",
+  M: "#7e5837",
+  X: "#d4a675",
+  d: "rgba(36,28,20,0.32)",
+};
+const WELL = [
+  "................",
+  "....DDDDDDDD....",
+  "...oM......Mo...",
+  "..oMo......oMo..",
+  "..oMo.MMMM.oMo..",
+  "..oMo.MXXM.oMo..",
+  "..oMo......oMo..",
+  "...oMooooooMo...",
+  "...oSSSSSSSo....",
+  "..oSLsSSsLSo....",
+  "..oSBBBWBBBSo...",
+  "..oSWBBBBBWSo...",
+  "..oSBWBBBBWSo...",
+  "...oSSSSSSSo....",
+  ".....ssssss.....",
+  "....dddddddd....",
+];
 
-// ---------- DUNGEON ENTRANCE ----------
-function drawCaveEntrance(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // mound
-  ctx.fillStyle = "#4a3a28";
-  ctx.beginPath();
-  ctx.moveTo(2, 28);
-  ctx.quadraticCurveTo(16, 4, 30, 28);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "#5a4a30";
-  ctx.beginPath();
-  ctx.moveTo(6, 28);
-  ctx.quadraticCurveTo(16, 10, 26, 28);
-  ctx.closePath();
-  ctx.fill();
-  // dark mouth
-  ctx.fillStyle = "#0a0a0a";
-  ctx.beginPath();
-  ctx.ellipse(16, 22, 7, 8, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // glowing eyes inside
-  ctx.fillStyle = "#ff5050";
-  pixel(ctx, 13, 22, "#ff5050");
-  pixel(ctx, 19, 22, "#ff5050");
-  // grass tufts on top
-  ctx.fillStyle = "#5a9648";
-  pixel(ctx, 10, 14, "#5a9648");
-  pixel(ctx, 22, 14, "#5a9648");
-}
+// Bed (only seen if standing where it'd render — we mark it nodraw but still
+// produce a sprite for completeness).
+const BED_PAL = {
+  o: "#2a221b",
+  W: "#7e5837",
+  w: "#3a2010",
+  R: "#c43a31",
+  L: "#fde4ea",
+  Y: "#d4a548",
+  d: "rgba(36,28,20,0.32)",
+};
+const BED = [
+  "................",
+  "....wwwwwwww....",
+  "...wWWWWWWWWw...",
+  "..wWYYYYYYYYWw..",
+  "..wWRRRRRRRRWw..",
+  "..wWRLLLLRRRWw..",
+  "..wWRLLLLRRRWw..",
+  "..wWRRRRRRRRWw..",
+  "..wWYYYYYYYYWw..",
+  "...wWWWWWWWWw...",
+  "....wwwwwwww....",
+  "....w......w....",
+  "................",
+  "................",
+  "................",
+  "................",
+];
 
-// ---------- DECORATIONS ----------
-function drawDecorLantern(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 7, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // pole
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(15, 14, 2, 14);
-  // lantern body
-  ctx.fillStyle = "#c43a31";
-  ctx.beginPath(); ctx.ellipse(16, 9, 6, 7, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#e85a48";
-  ctx.beginPath(); ctx.ellipse(14, 7, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // top + tassel
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(13, 2, 6, 1);
-  ctx.fillRect(15, 0, 2, 2);
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(15, 16, 2, 2);
-  // gold band
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(11, 9, 10, 1);
-  // glow
-  ctx.fillStyle = "rgba(255, 200, 100, 0.25)";
-  ctx.beginPath(); ctx.arc(16, 9, 11, 0, Math.PI * 2); ctx.fill();
-}
+// Talisman desk
+const DESK_PAL = {
+  o: "#2a221b",
+  W: "#a87a48",
+  w: "#704c25",
+  Y: "#f3e7c9",
+  R: "#c43a31",
+  K: "#1a1410",
+  X: "#d4a675",
+  d: "rgba(36,28,20,0.32)",
+};
+const DESK = [
+  "................",
+  "................",
+  "....YYY..YYY....",
+  "...YRYRYYRYRY...",
+  "...YYYY..YYYYK..",
+  "................",
+  "..oWWWWWWWWWWo..",
+  "..oWXXWWWWXWWo..",
+  "..oWWWWWWWWWWo..",
+  "..o.WWWWWWWW.o..",
+  "..o.W......W.o..",
+  "..o.w......w.o..",
+  "..o.w......w.o..",
+  "..oww......wwo..",
+  "................",
+  "....dddddddd....",
+];
 
-function drawDecorBanner(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 6, 2, 0, 0, Math.PI * 2); ctx.fill();
-  // pole
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(15, 2, 2, 26);
-  // top finial
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath(); ctx.arc(16, 1, 2, 0, Math.PI * 2); ctx.fill();
-  // banner cloth
-  ctx.fillStyle = "#c43a31";
-  ctx.fillRect(17, 4, 12, 16);
-  ctx.fillStyle = "#7a1f1a";
-  ctx.fillRect(17, 4, 12, 1);
-  ctx.fillRect(17, 19, 12, 1);
-  // sect emblem
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath(); ctx.arc(23, 12, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#7a1f1a";
-  pixel(ctx, 23, 12, "#7a1f1a");
-}
+// Pill furnace
+const FURNACE_PAL = {
+  o: "#2a221b",
+  D: "#5a544c",
+  S: "#9a948c",
+  L: "#bdb6ad",
+  F: "#ff7028",
+  f: "#ffb84a",
+  Y: "#fff5c0",
+  W: "rgba(180,180,180,0.6)",
+  d: "rgba(36,28,20,0.32)",
+};
+const FURNACE = [
+  "................",
+  "......WW........",
+  ".....WWWW.......",
+  "....WWWWWW......",
+  "..oDDDDDDDDo....",
+  "..oDSSSSSSDo....",
+  "..oDFFffffFDo...",
+  "..oDFfYYYYfDo...",
+  "..oDFffYffFDo...",
+  "..oDFFffffFDo...",
+  "..oDSSSSSSSDo...",
+  "..oDDDDDDDDDo...",
+  "...oLLLLLLLo....",
+  "....SSSSSSSS....",
+  "................",
+  "....dddddddd....",
+];
 
-function drawDecorPond(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 13, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // stone rim
-  ctx.fillStyle = "#7a7670";
-  ctx.beginPath(); ctx.ellipse(16, 22, 13, 6, 0, 0, Math.PI * 2); ctx.fill();
-  // water
-  ctx.fillStyle = "#3a78c2";
-  ctx.beginPath(); ctx.ellipse(16, 22, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
-  // ripples
-  ctx.fillStyle = "#6aa5e5";
-  ctx.fillRect(8, 22, 4, 1);
-  ctx.fillRect(20, 22, 4, 1);
-  // koi
-  ctx.fillStyle = "#ff8030";
-  ctx.beginPath(); ctx.ellipse(13, 21, 2.5, 1.2, 0.3, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#fff";
-  pixel(ctx, 11, 21, "#fff");
-  ctx.fillStyle = "#d4a548";
-  ctx.beginPath(); ctx.ellipse(20, 23, 2.5, 1.2, -0.3, 0, Math.PI * 2); ctx.fill();
-  // lotus
-  ctx.fillStyle = "#c890e0";
-  ctx.beginPath(); ctx.arc(16, 19, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5fae8a";
-  pixel(ctx, 18, 22, "#5fae8a", 2);
-}
+// Clay stove
+const STOVE_PAL = {
+  o: "#2a221b",
+  W: "#8a4a28",
+  X: "#5a2a18",
+  D: "#3a3a3a",
+  s: "#7a7a82",
+  F: "#ff7028",
+  f: "#ffd070",
+  K: "#1a1410",
+  Y: "#fff5c0",
+  M: "rgba(180,180,180,0.6)",
+  d: "rgba(36,28,20,0.32)",
+};
+const STOVE = [
+  "................",
+  "......MM........",
+  ".....MMMM.......",
+  "..oDDsssssDDo...",
+  "..oDsssssss Do..",
+  "..oWWWWWWWWWo...",
+  "..oWXWXWXWXWo...",
+  "..oWXKKKKKKWo...",
+  "..oWXKFffYFKo...",
+  "..oWXKFYffFKo...",
+  "..oWXKFffffKo...",
+  "..oWXKKKKKKWo...",
+  "..oWXWXWXWXWo...",
+  "..oWWWWWWWWWo...",
+  "................",
+  "....dddddddd....",
+];
 
-function drawDecorJade(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // boulder
-  ctx.fillStyle = "#3f8a5a";
-  ctx.beginPath();
-  ctx.moveTo(4, 28);
-  ctx.quadraticCurveTo(2, 14, 10, 8);
-  ctx.quadraticCurveTo(20, 4, 26, 12);
-  ctx.quadraticCurveTo(30, 22, 28, 28);
-  ctx.closePath();
-  ctx.fill();
-  // jade highlights
-  ctx.fillStyle = "#5fae8a";
-  ctx.beginPath();
-  ctx.moveTo(8, 18);
-  ctx.quadraticCurveTo(10, 10, 18, 10);
-  ctx.quadraticCurveTo(12, 16, 8, 18);
-  ctx.fill();
-  // gold flecks
-  ctx.fillStyle = "#d4a548";
-  pixel(ctx, 12, 14, "#d4a548");
-  pixel(ctx, 22, 18, "#d4a548");
-  pixel(ctx, 16, 22, "#d4a548");
-  // aura
-  ctx.fillStyle = "rgba(95, 174, 138, 0.2)";
-  ctx.beginPath(); ctx.arc(16, 18, 14, 0, Math.PI * 2); ctx.fill();
-}
+// Forge
+const FORGE_PAL = {
+  o: "#2a221b",
+  D: "#3a3a3a",
+  S: "#7a7a82",
+  L: "#bdb6ad",
+  W: "#7a4828",
+  X: "#5a3018",
+  H: "#3a2010",
+  F: "#ff7028",
+  f: "#ffd070",
+  Y: "#fff5c0",
+  K: "#1a1410",
+  M: "rgba(180,180,180,0.6)",
+  d: "rgba(36,28,20,0.32)",
+};
+const FORGE = [
+  ".......H........",
+  "......HMM.......",
+  ".....HMMM.......",
+  ".....HHHH.......",
+  "...oXXXXXXXXo...",
+  "...oXXFFFFFXo...",
+  "...oXFffYffXo...",
+  "...oXFfYYffXo...",
+  "...oXXFFFFFXo...",
+  "...oXKKKKKKXo...",
+  "..oSSSSSSSSSSo..",
+  "..oSLLLLLLLLLo..",
+  "...oDDDDDDDDo...",
+  "....DDDDDDDD....",
+  "................",
+  "....dddddddd....",
+];
 
-function drawChest(ctx) {
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(16, 28, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
-  // body
-  ctx.fillStyle = "#7a4a18";
-  ctx.fillRect(4, 14, 24, 14);
-  ctx.fillStyle = "#a87a48";
-  ctx.fillRect(4, 14, 24, 4);
-  // straps
-  ctx.fillStyle = "#3a2010";
-  ctx.fillRect(4, 18, 24, 2);
-  ctx.fillRect(4, 24, 24, 2);
-  // gold lock
-  ctx.fillStyle = "#d4a548";
-  ctx.fillRect(13, 17, 6, 6);
-  ctx.fillStyle = "#7a5a18";
-  pixel(ctx, 16, 20, "#7a5a18", 2);
-  // glow
-  ctx.fillStyle = "rgba(255, 220, 100, 0.25)";
-  ctx.beginPath(); ctx.arc(16, 18, 14, 0, Math.PI * 2); ctx.fill();
-}
+// Spirit loom
+const LOOM_PAL = {
+  o: "#2a221b",
+  W: "#704c25",
+  w: "#3a2010",
+  X: "#a87a48",
+  P: "#f4b6c2",
+  Q: "#e08aa0",
+  J: "#7fbf95",
+  Y: "#d4a548",
+  T: "#fbf6e8",
+  d: "rgba(36,28,20,0.32)",
+};
+const LOOM = [
+  "................",
+  "..oXXXXXXXXXXXo.",
+  "..oWoTToToToooo.",
+  "..oWoTToToToWWo.",
+  "..oWWPWWWWWWPWo.",   // spools
+  "..oWXTTTTTTTXWo.",
+  "..oWXTTTTTTTXWo.",
+  "..oWXTPPPPPTXWo.",
+  "..oWXPQQQQQPXWo.",
+  "..oWXPPQQQPPXWo.",
+  "..oWXPPPPPPPXWo.",
+  "..oWXJJYJJYJJXWo",
+  "..oWXXXXXXXXXXWo",
+  "..oWWWWWWWWWWWWo",
+  "................",
+  "....dddddddd....",
+];
 
-function drawSignpost(ctx, label) {
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(16, 30, 7, 2, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#5a3018";
-  ctx.fillRect(15, 14, 2, 16);
-  ctx.fillStyle = "#a87a48";
-  ctx.fillRect(4, 6, 24, 10);
-  ctx.fillStyle = "#704c25";
-  ctx.fillRect(4, 6, 24, 1);
-  ctx.fillRect(4, 15, 24, 1);
-  ctx.fillStyle = "#1a1410";
-  ctx.font = "bold 7px monospace";
+// Chest
+const CHEST_PAL = {
+  o: "#2a221b",
+  W: "#7a4a18",
+  X: "#a87a48",
+  D: "#3a2010",
+  Y: "#d4a548",
+  L: "#f0c878",
+  G: "rgba(212,165,72,0.25)",
+  d: "rgba(36,28,20,0.36)",
+};
+const CHEST = [
+  "................",
+  "................",
+  "..oXXXXXXXXXXo..",
+  "..oXLLLLLLLLXo..",
+  "..oXLLLLLLLLXo..",
+  "..oWWWWWWWWWWo..",
+  "..oWDWWWWWWDWo..",
+  "..oWDWYYYYWDWo..",
+  "..oWDWYDDLWDWo..",
+  "..oWDWYDDLWDWo..",
+  "..oWDWYYYYWDWo..",
+  "..oWWWWWWWWWWo..",
+  "..oWXXXXXXXXWo..",
+  "..oWWWWWWWWWWo..",
+  "................",
+  "....dddddddd....",
+];
+
+// Cave entrance
+const CAVE_PAL = {
+  o: "#2a221b",
+  S: "#5a544c",
+  s: "#3a342c",
+  L: "#9a948c",
+  K: "#1a1410",
+  R: "#ff5050",
+  G: "#5e9442",
+  d: "rgba(36,28,20,0.4)",
+};
+const CAVE = [
+  "................",
+  "................",
+  ".....oSSSo......",
+  "....oSLLLSo.....",
+  "...oSLSLLLSo....",
+  "..oSSSLSSSSSo...",
+  "..oSLSSSsSLSo...",
+  "..oSSsKKKsSSo...",
+  "..oSSKKRKKSSo...",
+  "..oSsKKRKKsSo...",
+  "..oSsKKKKKsSo...",
+  "..oSSsKKKsSSo...",
+  "..oSSSsKsSSSo...",
+  "...oSSSSSSSo....",
+  "....G..G..G.....",
+  "....dddddddd....",
+];
+
+// Decorations
+const DECOR_LANTERN_PAL = {
+  o: "#2a221b",
+  W: "#3a2010",
+  R: "#c43a31",
+  r: "#e85a48",
+  L: "#fde4ea",
+  Y: "#d4a548",
+  G: "rgba(255,200,100,0.28)",
+  d: "rgba(36,28,20,0.32)",
+};
+const DECOR_LANTERN = [
+  "................",
+  "......WW........",
+  "......WW........",
+  "......YY........",
+  ".....GGGGG......",
+  "....GoRRRRoG....",
+  "....oRrLLrRo....",
+  "....oRrLLrRo....",
+  "....oRRRRRRo....",
+  "....oYYYYYYo....",
+  "....oRRRRRRo....",
+  ".....oYYYYo.....",
+  "......YY........",
+  "......WW........",
+  "......WW........",
+  "....dddddddd....",
+];
+
+const DECOR_BANNER_PAL = {
+  o: "#2a221b",
+  W: "#3a2010",
+  R: "#c43a31",
+  r: "#7a1f1a",
+  Y: "#d4a548",
+  K: "#1a1410",
+  d: "rgba(36,28,20,0.32)",
+};
+const DECOR_BANNER = [
+  "................",
+  "......YYY.......",
+  ".......W........",
+  ".......W..oooo..",
+  ".......W.oRRRRo.",
+  ".......W.oRrYRo.",
+  ".......W.oRYYRo.",
+  ".......W.oRrYRo.",
+  ".......W.oRRRRo.",
+  ".......W.oRRRRo.",
+  ".......W..oRRo..",
+  ".......W..rrrr..",
+  ".......W........",
+  ".......W........",
+  ".......W........",
+  ".....dddddd.....",
+];
+
+const DECOR_POND_PAL = {
+  o: "#2a221b",
+  S: "#9a948c",
+  s: "#5a544c",
+  B: "#5d96cf",
+  W: "#a4c8e8",
+  O: "#ff8030",
+  Y: "#d4a548",
+  P: "#f4b6c2",
+  G: "#5e9442",
+  d: "rgba(36,28,20,0.32)",
+};
+const DECOR_POND = [
+  "................",
+  "................",
+  "....SSSSSSSS....",
+  "...sSLSSSSLSs...",
+  "..sSBBWBBBBBSs..",
+  "..sSBBBOBBYBSs..",
+  "..sSBOBBBBBBSs..",
+  "..sSBBBBBPBBSs..",
+  "..sSBYBBBOBBSs..",
+  "..sSBBBBBBBBSs..",
+  "...sSWBBBBBSs...",
+  "....SSSSSSSS....",
+  ".....G.GG.G.....",
+  "................",
+  "................",
+  "....dddddddd....",
+];
+
+const DECOR_JADE_PAL = {
+  o: "#2a221b",
+  J: "#3f8a5a",
+  j: "#5fae8a",
+  L: "#a8d6b0",
+  Y: "#d4a548",
+  G: "rgba(95,174,138,0.22)",
+  d: "rgba(36,28,20,0.4)",
+};
+const DECOR_JADE = [
+  "................",
+  ".......GGG......",
+  "......GjjJG....",
+  ".....oJjjjJo....",
+  "....oJjLLjJJo...",
+  "...oJjLjLjJJo...",
+  "..oJjLLjjjJjJo..",
+  "..oJjjjLLjjjJo..",
+  "..oJjLjjjjLjJo..",
+  "..oJjLjjjjLjJo..",
+  "..oJjjjLjjjjJo..",
+  "..oJjLjjjjLjJo..",
+  "..oJJJjjjjJJJo..",
+  "...oJJJJJJJo....",
+  "................",
+  "....dddddddd....",
+];
+
+// Signpost
+function buildSignpost(label) {
+  const c = makeCanvas(TILE, TILE);
+  const ctx = c.getContext("2d");
+  // post
+  pxRect(ctx, 7, 6, 2, 9, PAL.woodDeep);
+  // board
+  pxRect(ctx, 2, 2, 12, 6, PAL.woodMid);
+  pxRect(ctx, 2, 2, 12, 1, PAL.woodLight);
+  pxRect(ctx, 2, 7, 12, 1, PAL.woodDeep);
+  pxRect(ctx, 2, 2, 1, 6, PAL.woodDark);
+  pxRect(ctx, 13, 2, 1, 6, PAL.woodDark);
+  // shadow
+  pxRect(ctx, 5, 15, 6, 1, PAL.shadow);
+  // text
+  ctx.fillStyle = PAL.ink;
+  ctx.font = "bold 8px monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(label, 16, 11);
+  ctx.fillText(label, TILE / 2, 11);
+  return c;
 }
 
-// ---------- PROJECTILES / EFFECTS ----------
+// Fishing bobber
+const BOBBER_PAL = {
+  o: "#2a221b",
+  R: "#c43a31",
+  r: "#7a1f1a",
+  W: "#fbf6e8",
+};
+function buildBobber() {
+  const c = makeCanvas(16, 16);
+  const ctx = c.getContext("2d");
+  drawSprite(ctx, [
+    "................",
+    "................",
+    "................",
+    ".....oooo.......",
+    "....oWWWWo......",
+    "....oWWWWo......",
+    "....oRRRRo......",
+    "....oRrrRo......",
+    ".....oRRo.......",
+    "......oo........",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+  ], BOBBER_PAL, 0, 0, 1);
+  return c;
+}
 
-function drawTalismanProjectile(ctx) {
+// Slash FX
+function buildSlash() {
+  const c = makeCanvas(16, 16);
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fbf6e8";
+  ctx.fillRect(2, 8, 1, 1);
+  ctx.fillRect(3, 6, 1, 1);
+  ctx.fillRect(4, 4, 1, 1);
+  ctx.fillRect(6, 3, 1, 1);
+  ctx.fillRect(8, 2, 1, 1);
+  ctx.fillStyle = "rgba(120, 200, 255, 0.7)";
+  ctx.fillRect(2, 9, 1, 1);
+  ctx.fillRect(3, 7, 1, 1);
+  ctx.fillRect(4, 5, 1, 1);
+  ctx.fillRect(6, 4, 1, 1);
+  ctx.fillRect(8, 3, 1, 1);
+  ctx.fillStyle = "rgba(120, 200, 255, 0.4)";
+  for (let i = 0; i < 9; i++) ctx.fillRect(2 + i, 10 - Math.floor(i / 2), 1, 1);
+  return c;
+}
+
+// Talisman projectile (paper rectangle with red runes).
+function buildTalismanProj() {
+  const c = makeCanvas(16, 16);
+  const ctx = c.getContext("2d");
+  // glow
+  ctx.fillStyle = "rgba(255, 200, 100, 0.5)";
+  ctx.fillRect(0, 4, 16, 8);
+  // paper
   ctx.fillStyle = "#f3e7c9";
-  ctx.fillRect(2, 4, 12, 8);
+  ctx.fillRect(2, 5, 12, 6);
+  ctx.fillStyle = "#3a2010";
+  ctx.fillRect(2, 5, 12, 1);
+  ctx.fillRect(2, 10, 12, 1);
+  // red runes
   ctx.fillStyle = "#c43a31";
-  ctx.fillRect(4, 5, 8, 1);
   ctx.fillRect(4, 7, 8, 1);
   ctx.fillRect(4, 9, 8, 1);
-  ctx.fillStyle = "rgba(255, 200, 100, 0.6)";
-  ctx.fillRect(0, 2, 16, 12);
+  return c;
 }
 
-function drawSlash(ctx) {
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(8, 8, 7, -Math.PI / 4, Math.PI / 2);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(120, 200, 255, 0.5)";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.arc(8, 8, 7, -Math.PI / 4, Math.PI / 2);
-  ctx.stroke();
-}
-
-// ---------- BUILD ALL ----------
+// ===========================================================================
+// REGISTRY
+// ===========================================================================
 
 function buildSprites() {
-  const tiles = {
-    grass: drawGrassTile,
-    dirt: drawDirtTile,
-    tilled: drawTilledTile,
-    watered: drawWateredTile,
-    path: drawPathTile,
-    water: drawWaterTile,
-    stone: drawStoneTile,
-    wood: drawWoodFloorTile,
-    wall: drawWallTile,
-    forest: drawForestTile,
-    herb: drawHerb,
+  // tiles
+  const tileFns = {
+    grass: drawGrassTile, dirt: drawDirtTile, tilled: drawTilledTile,
+    watered: drawWateredTile, path: drawPathTile, water: drawWaterTile,
+    stone: drawStoneTile, wood: drawWoodFloorTile, wall: drawWallTile,
+    forest: drawForestTile, herb: drawHerbTile,
   };
-  for (const name in tiles) {
+  for (const id in tileFns) {
     const c = makeCanvas(TILE, TILE);
-    tiles[name](c.getContext("2d"));
-    SpriteCache["tile_" + name] = c;
+    tileFns[id](c.getContext("2d"));
+    SpriteCache["tile_" + id] = c;
   }
 
   // crops
   const cropFruits = {
-    rice: "#e8d878",
-    spirit_grain: "#7afaff",
-    qi_lotus: "#c890e0",
-    blood_pepper: "#c43a31",
+    rice:         { f: "#e8d878", F: "#fff5b6" },
+    spirit_grain: { f: "#7afaff", F: "#d8feff" },
+    qi_lotus:     { f: "#c890e0", F: "#f0d0ff" },
+    blood_pepper: { f: "#c43a31", F: "#f08070" },
   };
-  for (const name in cropFruits) {
+  for (const id in cropFruits) {
+    const { f, F } = cropFruits[id];
     for (let s = 0; s < 3; s++) {
-      const c = makeCanvas(TILE, TILE);
-      drawCrop(c.getContext("2d"), s, cropFruits[name]);
-      SpriteCache[`crop_${name}_${s}`] = c;
+      SpriteCache[`crop_${id}_${s}`] = buildCropSprite(s, f, F);
     }
   }
 
-  // entities (32x32)
-  const entities = {
-    beast_rabbit_0: (cx) => drawBeastRabbit(cx, 0),
-    beast_rabbit_1: (cx) => drawBeastRabbit(cx, 1),
-    beast_boar_0: (cx) => drawBeastBoar(cx, 0),
-    beast_boar_1: (cx) => drawBeastBoar(cx, 1),
-    beast_wolf_0: (cx) => drawBeastWolf(cx, 0),
-    beast_wolf_1: (cx) => drawBeastWolf(cx, 1),
-    beast_gui_0: (cx) => drawBeastGui(cx, 0),
-    beast_gui_1: (cx) => drawBeastGui(cx, 1),
-    beast_jiangshi_0: (cx) => drawBeastJiangshi(cx, 0),
-    beast_jiangshi_1: (cx) => drawBeastJiangshi(cx, 1),
-    beast_huli_jing_0: (cx) => drawBeastHuliJing(cx, 0),
-    beast_huli_jing_1: (cx) => drawBeastHuliJing(cx, 1),
-    beast_nine_tail_fox_0: (cx) => drawBeastNineTailFox(cx, 0),
-    beast_nine_tail_fox_1: (cx) => drawBeastNineTailFox(cx, 1),
-    beast_qilin_0: (cx) => drawBeastQilin(cx, 0),
-    beast_qilin_1: (cx) => drawBeastQilin(cx, 1),
-    beast_young_dragon_0: (cx) => drawBeastDragon(cx, 0),
-    beast_young_dragon_1: (cx) => drawBeastDragon(cx, 1),
-    merchant: drawMerchant,
-  };
-  for (const name in entities) {
-    const c = makeCanvas(TILE, TILE);
-    entities[name](c.getContext("2d"));
-    SpriteCache["entity_" + name] = c;
-  }
+  // player
+  SpriteCache["player_down_0"]  = buildPlayerSprite(PLAYER_DOWN_0);
+  SpriteCache["player_down_1"]  = buildPlayerSprite(PLAYER_DOWN_1);
+  SpriteCache["player_up_0"]    = buildPlayerSprite(PLAYER_UP_0);
+  SpriteCache["player_up_1"]    = buildPlayerSprite(PLAYER_UP_1);
+  SpriteCache["player_left_0"]  = buildPlayerSprite(PLAYER_LEFT_0);
+  SpriteCache["player_left_1"]  = buildPlayerSprite(PLAYER_LEFT_1);
+  SpriteCache["player_right_0"] = buildPlayerSprite(PLAYER_RIGHT_0);
+  SpriteCache["player_right_1"] = buildPlayerSprite(PLAYER_RIGHT_1);
 
-  // player frames
-  for (const facing of ["down", "up", "left", "right"]) {
-    for (let f = 0; f < 2; f++) {
-      const c = makeCanvas(TILE, TILE);
-      drawPlayer(c.getContext("2d"), f, facing);
-      SpriteCache[`player_${facing}_${f}`] = c;
-    }
-  }
+  // beasts
+  SpriteCache["entity_beast_rabbit_0"] = buildBeastFrame(RABBIT_PAL, RABBIT_0);
+  SpriteCache["entity_beast_rabbit_1"] = buildBeastFrame(RABBIT_PAL, RABBIT_1);
+  SpriteCache["entity_beast_boar_0"] = buildBeastFrame(BOAR_PAL, BOAR_0);
+  SpriteCache["entity_beast_boar_1"] = buildBeastFrame(BOAR_PAL, BOAR_1);
+  SpriteCache["entity_beast_wolf_0"] = buildBeastFrame(WOLF_PAL, WOLF_0);
+  SpriteCache["entity_beast_wolf_1"] = buildBeastFrame(WOLF_PAL, WOLF_1);
+  SpriteCache["entity_beast_gui_0"] = buildBeastFrame(GUI_PAL, GUI_0);
+  SpriteCache["entity_beast_gui_1"] = buildBeastFrame(GUI_PAL, GUI_1);
+  SpriteCache["entity_beast_jiangshi_0"] = buildBeastFrame(JIANGSHI_PAL, JIANGSHI_0);
+  SpriteCache["entity_beast_jiangshi_1"] = buildBeastFrame(JIANGSHI_PAL, JIANGSHI_1);
+  SpriteCache["entity_beast_huli_jing_0"] = buildBeastFrame(HULI_PAL, HULI_0);
+  SpriteCache["entity_beast_huli_jing_1"] = buildBeastFrame(HULI_PAL, HULI_1);
+  SpriteCache["entity_beast_nine_tail_fox_0"] = buildBeastFrame(NINE_PAL, NINE_0);
+  SpriteCache["entity_beast_nine_tail_fox_1"] = buildBeastFrame(NINE_PAL, NINE_1);
+  SpriteCache["entity_beast_qilin_0"] = buildBeastFrame(QILIN_PAL, QILIN_0);
+  SpriteCache["entity_beast_qilin_1"] = buildBeastFrame(QILIN_PAL, QILIN_1);
+  SpriteCache["entity_beast_young_dragon_0"] = buildBeastFrame(DRAGON_PAL, DRAGON_0);
+  SpriteCache["entity_beast_young_dragon_1"] = buildBeastFrame(DRAGON_PAL, DRAGON_1);
+
+  SpriteCache["entity_merchant"] = buildBeastFrame(MERCHANT_PAL, MERCHANT);
+  SpriteCache["entity_companion_partner_0"] = buildBeastFrame(PARTNER_PAL, PARTNER_0);
+  SpriteCache["entity_companion_partner_1"] = buildBeastFrame(PARTNER_PAL, PARTNER_1);
 
   // structures
+  // House: 96x96 actual = 48x48 logical.
   const houseC = makeCanvas(96, 96);
-  drawHouse(houseC.getContext("2d"));
+  drawSprite(houseC.getContext("2d"), HOUSE, HOUSE_PAL);
   SpriteCache["struct_house"] = houseC;
-
-  const houseUC = makeCanvas(96, 96);
-  drawHouseUpgraded(houseUC.getContext("2d"));
-  SpriteCache["struct_house_upgraded"] = houseUC;
+  const houseUpC = makeCanvas(96, 96);
+  drawSprite(houseUpC.getContext("2d"), HOUSE_UPGRADED, HOUSE_PAL);
+  patchUpgradedHouse(houseUpC.getContext("2d"));
+  SpriteCache["struct_house_upgraded"] = houseUpC;
 
   const matC = makeCanvas(TILE, TILE);
-  drawMeditationMat(matC.getContext("2d"));
+  drawSprite(matC.getContext("2d"), MAT, MAT_PAL);
   SpriteCache["struct_mat"] = matC;
 
-  const furnC = makeCanvas(TILE, TILE);
-  drawFurnace(furnC.getContext("2d"));
-  SpriteCache["struct_furnace"] = furnC;
+  const wellC = makeCanvas(TILE, TILE);
+  drawSprite(wellC.getContext("2d"), WELL, WELL_PAL);
+  SpriteCache["struct_well"] = wellC;
+
+  const bedC = makeCanvas(TILE, TILE);
+  drawSprite(bedC.getContext("2d"), BED, BED_PAL);
+  SpriteCache["struct_bed"] = bedC;
 
   const deskC = makeCanvas(TILE, TILE);
-  drawTalismanDesk(deskC.getContext("2d"));
+  drawSprite(deskC.getContext("2d"), DESK, DESK_PAL);
   SpriteCache["struct_desk"] = deskC;
 
+  const furnaceC = makeCanvas(TILE, TILE);
+  drawSprite(furnaceC.getContext("2d"), FURNACE, FURNACE_PAL);
+  SpriteCache["struct_furnace"] = furnaceC;
+
   const stoveC = makeCanvas(TILE, TILE);
-  drawStove(stoveC.getContext("2d"));
+  drawSprite(stoveC.getContext("2d"), STOVE, STOVE_PAL);
   SpriteCache["struct_stove"] = stoveC;
 
   const forgeC = makeCanvas(TILE, TILE);
-  drawForge(forgeC.getContext("2d"));
+  drawSprite(forgeC.getContext("2d"), FORGE, FORGE_PAL);
   SpriteCache["struct_forge"] = forgeC;
 
   const loomC = makeCanvas(TILE, TILE);
-  drawLoom(loomC.getContext("2d"));
+  drawSprite(loomC.getContext("2d"), LOOM, LOOM_PAL);
   SpriteCache["struct_loom"] = loomC;
 
-  const bobberC = makeCanvas(16, 16);
-  drawFishingBobber(bobberC.getContext("2d"));
-  SpriteCache["fx_bobber"] = bobberC;
-
-  // Companion partner
-  for (let f = 0; f < 2; f++) {
-    const c = makeCanvas(TILE, TILE);
-    drawCompanionPartner(c.getContext("2d"), f);
-    SpriteCache[`entity_companion_partner_${f}`] = c;
-  }
-
-  // Cave / dungeon entrance
-  const caveC = makeCanvas(TILE, TILE);
-  drawCaveEntrance(caveC.getContext("2d"));
-  SpriteCache["struct_cave"] = caveC;
-
-  // Chest
   const chestC = makeCanvas(TILE, TILE);
-  drawChest(chestC.getContext("2d"));
+  drawSprite(chestC.getContext("2d"), CHEST, CHEST_PAL);
   SpriteCache["struct_chest"] = chestC;
 
-  // Decorations
-  const decoMap = {
-    decor_lantern: drawDecorLantern,
-    decor_banner:  drawDecorBanner,
-    decor_pond:    drawDecorPond,
-    decor_jade:    drawDecorJade,
-  };
-  for (const k in decoMap) {
-    const c = makeCanvas(TILE, TILE);
-    decoMap[k](c.getContext("2d"));
-    SpriteCache["struct_" + k] = c;
-  }
+  const caveC = makeCanvas(TILE, TILE);
+  drawSprite(caveC.getContext("2d"), CAVE, CAVE_PAL);
+  SpriteCache["struct_cave"] = caveC;
 
-  const bedC = makeCanvas(TILE, TILE);
-  drawBed(bedC.getContext("2d"));
-  SpriteCache["struct_bed"] = bedC;
+  // Decorations — keys match world.js: "struct_" + DECORATIONS[id].spriteKey.
+  const lanternC = makeCanvas(TILE, TILE);
+  drawSprite(lanternC.getContext("2d"), DECOR_LANTERN, DECOR_LANTERN_PAL);
+  SpriteCache["struct_decor_lantern"] = lanternC;
 
-  const wellC = makeCanvas(TILE, TILE);
-  drawWell(wellC.getContext("2d"));
-  SpriteCache["struct_well"] = wellC;
+  const bannerC = makeCanvas(TILE, TILE);
+  drawSprite(bannerC.getContext("2d"), DECOR_BANNER, DECOR_BANNER_PAL);
+  SpriteCache["struct_decor_banner"] = bannerC;
 
-  // signposts
+  const pondC = makeCanvas(TILE, TILE);
+  drawSprite(pondC.getContext("2d"), DECOR_POND, DECOR_POND_PAL);
+  SpriteCache["struct_decor_pond"] = pondC;
+
+  const jadeC = makeCanvas(TILE, TILE);
+  drawSprite(jadeC.getContext("2d"), DECOR_JADE, DECOR_JADE_PAL);
+  SpriteCache["struct_decor_jade"] = jadeC;
+
+  // Signposts
   for (const lbl of ["Farm", "Forest", "Market", "Home"]) {
-    const c = makeCanvas(TILE, TILE);
-    drawSignpost(c.getContext("2d"), lbl);
-    SpriteCache["sign_" + lbl] = c;
+    SpriteCache["sign_" + lbl] = buildSignpost(lbl);
   }
 
-  // projectiles
-  const tProj = makeCanvas(16, 16);
-  drawTalismanProjectile(tProj.getContext("2d"));
-  SpriteCache["proj_talisman"] = tProj;
-
-  const slashC = makeCanvas(16, 16);
-  drawSlash(slashC.getContext("2d"));
-  SpriteCache["fx_slash"] = slashC;
+  // FX
+  SpriteCache["fx_bobber"]   = buildBobber();
+  SpriteCache["fx_slash"]    = buildSlash();
+  SpriteCache["proj_talisman"] = buildTalismanProj();
 }
 
 function getSprite(key) {
