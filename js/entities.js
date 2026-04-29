@@ -117,7 +117,6 @@ function drawPlayer_(ctx, player, cam) {
   const spr = SpriteCache[key];
   const liftY = player.flying ? -8 - Math.sin(performance.now() / 200) * 2 : 0;
   if (player.flying) {
-    // sword wisp underfoot
     ctx.fillStyle = "rgba(120, 200, 255, 0.5)";
     ctx.beginPath();
     ctx.ellipse(player.x - cam.x, player.y - cam.y - 2, 12, 3, 0, 0, Math.PI * 2);
@@ -127,7 +126,11 @@ function drawPlayer_(ctx, player, cam) {
     ctx.ellipse(player.x - cam.x, player.y - cam.y + 2, 16, 3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  if (spr) ctx.drawImage(spr, player.x - cam.x - 16, player.y - cam.y - 24 + liftY);
+  if (spr) {
+    const w = spr.width, h = spr.height;
+    // Anchor feet near the bottom of the painted sprite (small footroom).
+    ctx.drawImage(spr, player.x - cam.x - w / 2, player.y - cam.y - h + 6 + liftY);
+  }
   if (player.wardTimer > 0) {
     ctx.strokeStyle = `rgba(120, 200, 255, ${0.4 + 0.3 * Math.sin(performance.now() / 80)})`;
     ctx.lineWidth = 2;
@@ -140,22 +143,24 @@ function drawPlayer_(ctx, player, cam) {
 function drawBeast_(ctx, b, cam) {
   const key = `entity_${b.def.spriteKey}_${b.animFrame}`;
   const spr = SpriteCache[key];
+  let drawTopY = b.y - cam.y - 22;
   if (spr) {
     ctx.save();
     if (b.hitFlash > 0) {
       ctx.globalCompositeOperation = "source-over";
       ctx.filter = "brightness(2)";
     }
-    ctx.drawImage(spr, b.x - cam.x - 16, b.y - cam.y - 22);
+    const w = spr.width, h = spr.height;
+    drawTopY = b.y - cam.y - h + 4;
+    ctx.drawImage(spr, b.x - cam.x - w / 2, drawTopY);
     ctx.restore();
   }
-  // hp bar
   if (b.hp < b.hpMax) {
-    const w = 24;
+    const bw = 24;
     ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(b.x - cam.x - w / 2, b.y - cam.y - 28, w, 3);
+    ctx.fillRect(b.x - cam.x - bw / 2, drawTopY - 6, bw, 3);
     ctx.fillStyle = "#d33";
-    ctx.fillRect(b.x - cam.x - w / 2, b.y - cam.y - 28, w * (b.hp / b.hpMax), 3);
+    ctx.fillRect(b.x - cam.x - bw / 2, drawTopY - 6, bw * (b.hp / b.hpMax), 3);
   }
 }
 

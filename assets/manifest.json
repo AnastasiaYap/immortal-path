@@ -1,0 +1,1187 @@
+[
+  {
+    "name": "player_house_lv1_bamboo_hut",
+    "source": "02_buildings_upgrade_stages/player_house_lv1_bamboo_hut.png",
+    "category": "buildings",
+    "out_path": "01_individual_sprites/buildings/player_house_lv1_bamboo_hut.png",
+    "width": 310,
+    "height": 204,
+    "bbox_in_source": [
+      0,
+      56,
+      310,
+      260
+    ],
+    "notes": "single cleaned building upgrade sprite"
+  },
+  {
+    "name": "player_house_lv2_jade_cottage",
+    "source": "02_buildings_upgrade_stages/player_house_lv2_jade_cottage.png",
+    "category": "buildings",
+    "out_path": "01_individual_sprites/buildings/player_house_lv2_jade_cottage.png",
+    "width": 360,
+    "height": 266,
+    "bbox_in_source": [
+      0,
+      19,
+      360,
+      285
+    ],
+    "notes": "single cleaned building upgrade sprite"
+  },
+  {
+    "name": "player_house_lv3_courtyard_house",
+    "source": "02_buildings_upgrade_stages/player_house_lv3_courtyard_house.png",
+    "category": "buildings",
+    "out_path": "01_individual_sprites/buildings/player_house_lv3_courtyard_house.png",
+    "width": 459,
+    "height": 350,
+    "bbox_in_source": [
+      0,
+      0,
+      459,
+      350
+    ],
+    "notes": "single cleaned building upgrade sprite"
+  },
+  {
+    "name": "player_house_lv4_spirit_manor",
+    "source": "02_buildings_upgrade_stages/player_house_lv4_spirit_manor.png",
+    "category": "buildings",
+    "out_path": "01_individual_sprites/buildings/player_house_lv4_spirit_manor.png",
+    "width": 496,
+    "height": 380,
+    "bbox_in_source": [
+      4,
+      0,
+      500,
+      380
+    ],
+    "notes": "single cleaned building upgrade sprite"
+  },
+  {
+    "name": "bamboo_house_small",
+    "source": "06_props_items_vfx_ui/bamboo_house_small.png",
+    "category": "buildings",
+    "out_path": "01_individual_sprites/buildings/bamboo_house_small.png",
+    "width": 372,
+    "height": 262,
+    "bbox_in_source": [
+      0,
+      8,
+      372,
+      270
+    ],
+    "notes": "single small house prop"
+  },
+  {
+    "name": "alchemist_turnaround_01",
+    "source": "03_characters_creatures/alchemist_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/alchemist_turnaround_01.png",
+    "width": 186,
+    "height": 224,
+    "bbox_in_source": [
+      172,
+      0,
+      358,
+      224
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "alchemist_turnaround_02",
+    "source": "03_characters_creatures/alchemist_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/alchemist_turnaround_02.png",
+    "width": 139,
+    "height": 228,
+    "bbox_in_source": [
+      396,
+      0,
+      535,
+      228
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "baby_dragon_turnaround_a_01",
+    "source": "03_characters_creatures/baby_dragon_turnaround_a.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/baby_dragon_turnaround_a_01.png",
+    "width": 160,
+    "height": 125,
+    "bbox_in_source": [
+      40,
+      0,
+      200,
+      125
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "baby_dragon_turnaround_a_02",
+    "source": "03_characters_creatures/baby_dragon_turnaround_a.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/baby_dragon_turnaround_a_02.png",
+    "width": 113,
+    "height": 130,
+    "bbox_in_source": [
+      287,
+      0,
+      400,
+      130
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "baby_dragon_turnaround_a_03",
+    "source": "03_characters_creatures/baby_dragon_turnaround_a.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/baby_dragon_turnaround_a_03.png",
+    "width": 115,
+    "height": 122,
+    "bbox_in_source": [
+      504,
+      0,
+      619,
+      122
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "baby_dragon_turnaround_b_01",
+    "source": "03_characters_creatures/baby_dragon_turnaround_b.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/baby_dragon_turnaround_b_01.png",
+    "width": 158,
+    "height": 122,
+    "bbox_in_source": [
+      145,
+      0,
+      303,
+      122
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "baby_dragon_turnaround_b_02",
+    "source": "03_characters_creatures/baby_dragon_turnaround_b.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/baby_dragon_turnaround_b_02.png",
+    "width": 122,
+    "height": 121,
+    "bbox_in_source": [
+      343,
+      0,
+      465,
+      121
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "blacksmith_turnaround_01",
+    "source": "03_characters_creatures/blacksmith_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/blacksmith_turnaround_01.png",
+    "width": 199,
+    "height": 227,
+    "bbox_in_source": [
+      6,
+      0,
+      205,
+      227
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "blacksmith_turnaround_02",
+    "source": "03_characters_creatures/blacksmith_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/blacksmith_turnaround_02.png",
+    "width": 199,
+    "height": 224,
+    "bbox_in_source": [
+      264,
+      0,
+      463,
+      224
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "elder_sage_turnaround_01",
+    "source": "03_characters_creatures/elder_sage_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/elder_sage_turnaround_01.png",
+    "width": 209,
+    "height": 224,
+    "bbox_in_source": [
+      0,
+      0,
+      209,
+      224
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "elder_sage_turnaround_02",
+    "source": "03_characters_creatures/elder_sage_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/elder_sage_turnaround_02.png",
+    "width": 182,
+    "height": 224,
+    "bbox_in_source": [
+      243,
+      0,
+      425,
+      224
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "farmer_villager_turnaround_01",
+    "source": "03_characters_creatures/farmer_villager_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/farmer_villager_turnaround_01.png",
+    "width": 203,
+    "height": 212,
+    "bbox_in_source": [
+      170,
+      0,
+      373,
+      212
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "player_cultivator_turnaround_01",
+    "source": "03_characters_creatures/player_cultivator_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/player_cultivator_turnaround_01.png",
+    "width": 138,
+    "height": 217,
+    "bbox_in_source": [
+      45,
+      0,
+      183,
+      217
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "player_cultivator_turnaround_02",
+    "source": "03_characters_creatures/player_cultivator_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/player_cultivator_turnaround_02.png",
+    "width": 152,
+    "height": 212,
+    "bbox_in_source": [
+      258,
+      0,
+      410,
+      212
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "spirit_fox_turnaround_01",
+    "source": "03_characters_creatures/spirit_fox_turnaround.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/spirit_fox_turnaround_01.png",
+    "width": 230,
+    "height": 196,
+    "bbox_in_source": [
+      119,
+      28,
+      349,
+      224
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "player_turnaround_small_01",
+    "source": "06_props_items_vfx_ui/player_turnaround_small.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/player_turnaround_small_01.png",
+    "width": 141,
+    "height": 237,
+    "bbox_in_source": [
+      90,
+      23,
+      231,
+      260
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "player_turnaround_small_02",
+    "source": "06_props_items_vfx_ui/player_turnaround_small.png",
+    "category": "characters_creatures",
+    "out_path": "01_individual_sprites/characters_creatures/player_turnaround_small_02.png",
+    "width": 135,
+    "height": 232,
+    "bbox_in_source": [
+      285,
+      28,
+      420,
+      260
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_01",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_01.png",
+    "width": 157,
+    "height": 149,
+    "bbox_in_source": [
+      6,
+      51,
+      163,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_02",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_02.png",
+    "width": 146,
+    "height": 132,
+    "bbox_in_source": [
+      194,
+      68,
+      340,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_03",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_03.png",
+    "width": 152,
+    "height": 141,
+    "bbox_in_source": [
+      372,
+      59,
+      524,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_04",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_04.png",
+    "width": 156,
+    "height": 142,
+    "bbox_in_source": [
+      551,
+      58,
+      707,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_05",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_05.png",
+    "width": 150,
+    "height": 129,
+    "bbox_in_source": [
+      736,
+      71,
+      886,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "crops_and_plants_row_06",
+    "source": "06_props_items_vfx_ui/crops_and_plants_row.png",
+    "category": "crops_plants",
+    "out_path": "01_individual_sprites/crops_plants/crops_and_plants_row_06.png",
+    "width": 156,
+    "height": 150,
+    "bbox_in_source": [
+      915,
+      50,
+      1071,
+      200
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_01",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_01.png",
+    "width": 91,
+    "height": 108,
+    "bbox_in_source": [
+      28,
+      41,
+      119,
+      149
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_02",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_02.png",
+    "width": 42,
+    "height": 54,
+    "bbox_in_source": [
+      116,
+      76,
+      158,
+      130
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_03",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_03.png",
+    "width": 103,
+    "height": 113,
+    "bbox_in_source": [
+      158,
+      32,
+      261,
+      145
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_04",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_04.png",
+    "width": 82,
+    "height": 93,
+    "bbox_in_source": [
+      266,
+      46,
+      349,
+      139
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_05",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_05.png",
+    "width": 87,
+    "height": 97,
+    "bbox_in_source": [
+      361,
+      45,
+      448,
+      142
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_06",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_06.png",
+    "width": 10,
+    "height": 72,
+    "bbox_in_source": [
+      441,
+      50,
+      451,
+      122
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_07",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_07.png",
+    "width": 14,
+    "height": 66,
+    "bbox_in_source": [
+      444,
+      50,
+      458,
+      116
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_08",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_08.png",
+    "width": 34,
+    "height": 39,
+    "bbox_in_source": [
+      464,
+      93,
+      498,
+      140
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_09",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_09.png",
+    "width": 71,
+    "height": 102,
+    "bbox_in_source": [
+      498,
+      38,
+      569,
+      140
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "vfx_talismans_wind_petals_10",
+    "source": "06_props_items_vfx_ui/vfx_talismans_wind_petals.png",
+    "category": "vfx",
+    "out_path": "01_individual_sprites/vfx/vfx_talismans_wind_petals_10.png",
+    "width": 24,
+    "height": 16,
+    "bbox_in_source": [
+      566,
+      48,
+      591,
+      116
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_01",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_01.png",
+    "width": 134,
+    "height": 87,
+    "bbox_in_source": [
+      0,
+      0,
+      134,
+      88
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_02",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_02.png",
+    "width": 134,
+    "height": 83,
+    "bbox_in_source": [
+      159,
+      0,
+      293,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_03",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_03.png",
+    "width": 135,
+    "height": 83,
+    "bbox_in_source": [
+      309,
+      0,
+      445,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_04",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_04.png",
+    "width": 132,
+    "height": 83,
+    "bbox_in_source": [
+      460,
+      0,
+      592,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_05",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_05.png",
+    "width": 136,
+    "height": 83,
+    "bbox_in_source": [
+      606,
+      0,
+      743,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_06",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_06.png",
+    "width": 124,
+    "height": 83,
+    "bbox_in_source": [
+      761,
+      0,
+      885,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_07",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_07.png",
+    "width": 119,
+    "height": 83,
+    "bbox_in_source": [
+      902,
+      0,
+      1021,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_08",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_08.png",
+    "width": 128,
+    "height": 83,
+    "bbox_in_source": [
+      1036,
+      0,
+      1164,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_09",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_09.png",
+    "width": 141,
+    "height": 81,
+    "bbox_in_source": [
+      1173,
+      0,
+      1317,
+      83
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "hotbar_ui_icon_row_10",
+    "source": "06_props_items_vfx_ui/hotbar_ui_icon_row.png",
+    "category": "ui_icons",
+    "out_path": "01_individual_sprites/ui_icons/hotbar_ui_icon_row_10.png",
+    "width": 78,
+    "height": 97,
+    "bbox_in_source": [
+      1332,
+      0,
+      1410,
+      97
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_01",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_01.png",
+    "width": 57,
+    "height": 109,
+    "bbox_in_source": [
+      0,
+      71,
+      57,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_02",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_02.png",
+    "width": 85,
+    "height": 109,
+    "bbox_in_source": [
+      77,
+      71,
+      162,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_03",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_03.png",
+    "width": 94,
+    "height": 109,
+    "bbox_in_source": [
+      185,
+      71,
+      279,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_04",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_04.png",
+    "width": 96,
+    "height": 109,
+    "bbox_in_source": [
+      303,
+      71,
+      399,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_05",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_05.png",
+    "width": 84,
+    "height": 102,
+    "bbox_in_source": [
+      432,
+      78,
+      516,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_06",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_06.png",
+    "width": 94,
+    "height": 94,
+    "bbox_in_source": [
+      535,
+      86,
+      629,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_07",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_07.png",
+    "width": 86,
+    "height": 94,
+    "bbox_in_source": [
+      645,
+      86,
+      731,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_08",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_08.png",
+    "width": 87,
+    "height": 94,
+    "bbox_in_source": [
+      749,
+      86,
+      836,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_09",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_09.png",
+    "width": 88,
+    "height": 90,
+    "bbox_in_source": [
+      854,
+      90,
+      942,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_10",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_10.png",
+    "width": 83,
+    "height": 97,
+    "bbox_in_source": [
+      970,
+      83,
+      1053,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_11",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_11.png",
+    "width": 116,
+    "height": 98,
+    "bbox_in_source": [
+      1102,
+      82,
+      1218,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_12",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_12.png",
+    "width": 99,
+    "height": 103,
+    "bbox_in_source": [
+      1232,
+      77,
+      1331,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_13",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_13.png",
+    "width": 94,
+    "height": 99,
+    "bbox_in_source": [
+      1347,
+      81,
+      1441,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "environment_props_row_lanterns_plants_crystals_14",
+    "source": "04_environment_tiles/environment_props_row_lanterns_plants_crystals.png",
+    "category": "environment_props",
+    "out_path": "01_individual_sprites/environment_props/environment_props_row_lanterns_plants_crystals_14.png",
+    "width": 104,
+    "height": 97,
+    "bbox_in_source": [
+      1456,
+      83,
+      1560,
+      180
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_01",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_01.png",
+    "width": 166,
+    "height": 126,
+    "bbox_in_source": [
+      0,
+      43,
+      166,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_02",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_02.png",
+    "width": 189,
+    "height": 115,
+    "bbox_in_source": [
+      162,
+      55,
+      351,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_03",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_03.png",
+    "width": 206,
+    "height": 131,
+    "bbox_in_source": [
+      353,
+      39,
+      559,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_04",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_04.png",
+    "width": 187,
+    "height": 114,
+    "bbox_in_source": [
+      558,
+      56,
+      745,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_05",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_05.png",
+    "width": 147,
+    "height": 103,
+    "bbox_in_source": [
+      750,
+      67,
+      897,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_06",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_06.png",
+    "width": 178,
+    "height": 131,
+    "bbox_in_source": [
+      901,
+      39,
+      1079,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_07",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_07.png",
+    "width": 163,
+    "height": 137,
+    "bbox_in_source": [
+      1087,
+      33,
+      1250,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_08",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_08.png",
+    "width": 165,
+    "height": 138,
+    "bbox_in_source": [
+      1258,
+      32,
+      1423,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "bridges_waterfalls_paths_row_09",
+    "source": "04_environment_tiles/bridges_waterfalls_paths_row.png",
+    "category": "bridges_waterfalls",
+    "out_path": "01_individual_sprites/bridges_waterfalls/bridges_waterfalls_paths_row_09.png",
+    "width": 133,
+    "height": 122,
+    "bbox_in_source": [
+      1427,
+      48,
+      1560,
+      170
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_01",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_01.png",
+    "width": 153,
+    "height": 106,
+    "bbox_in_source": [
+      0,
+      35,
+      153,
+      141
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_02",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_02.png",
+    "width": 197,
+    "height": 111,
+    "bbox_in_source": [
+      160,
+      33,
+      357,
+      144
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_03",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_03.png",
+    "width": 215,
+    "height": 118,
+    "bbox_in_source": [
+      363,
+      27,
+      578,
+      145
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_04",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_04.png",
+    "width": 181,
+    "height": 110,
+    "bbox_in_source": [
+      588,
+      35,
+      769,
+      145
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_05",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_05.png",
+    "width": 197,
+    "height": 112,
+    "bbox_in_source": [
+      778,
+      32,
+      975,
+      144
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_06",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_06.png",
+    "width": 185,
+    "height": 108,
+    "bbox_in_source": [
+      983,
+      32,
+      1168,
+      140
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_07",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_07.png",
+    "width": 172,
+    "height": 104,
+    "bbox_in_source": [
+      1176,
+      40,
+      1349,
+      144
+    ],
+    "notes": "cut from reference sheet"
+  },
+  {
+    "name": "ground_tiles_row_08",
+    "source": "04_environment_tiles/ground_tiles_row.png",
+    "category": "ground_tiles",
+    "out_path": "01_individual_sprites/ground_tiles/ground_tiles_row_08.png",
+    "width": 195,
+    "height": 115,
+    "bbox_in_source": [
+      1365,
+      30,
+      1560,
+      145
+    ],
+    "notes": "cut from reference sheet"
+  }
+]

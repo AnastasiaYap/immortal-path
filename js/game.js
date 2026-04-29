@@ -2,6 +2,8 @@
 
 (function () {
   buildSprites();
+  // Painted PNG assets stream in over the procedural fallback.
+  if (typeof loadAssets === "function") loadAssets();
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
@@ -572,28 +574,40 @@
       if (s.nodraw) continue;
       if (s.built === false) continue;  // unbuilt craft stations
       let baseY = (s.ty + s.h) * TILE;
-      let key, sw = TILE, sh = TILE, ax, ay;
+      let key;
+      let bottomAnchored = false;          // bottom-center anchor for big sprites
       switch (s.type) {
-        case "house": key = `struct_house_tier_${Math.min(3, s.tier || 0)}`; sw = 96; sh = 96; ax = (s.tx + s.w / 2) * TILE - sw / 2; ay = baseY - sh; break;
-        case "mat":     key = "struct_mat";     ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "well":    key = "struct_well";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "desk":    key = "struct_desk";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "furnace": key = "struct_furnace"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "stove":   key = "struct_stove";   ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "forge":   key = "struct_forge";   ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "loom":    key = "struct_loom";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "merchant":key = "entity_merchant";ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "sign":    key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "cave":    key = "struct_cave";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "chest":   key = "struct_chest";   ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "decor":   key = "struct_" + DECORATIONS[s.decor].spriteKey; ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "house":   key = `struct_house_tier_${Math.min(3, s.tier || 0)}`; bottomAnchored = true; break;
+        case "mat":     key = "struct_mat";     break;
+        case "well":    key = "struct_well";    bottomAnchored = true; break;
+        case "desk":    key = "struct_desk";    break;
+        case "furnace": key = "struct_furnace"; break;
+        case "stove":   key = "struct_stove";   break;
+        case "forge":   key = "struct_forge";   break;
+        case "loom":    key = "struct_loom";    break;
+        case "merchant":key = "entity_merchant";bottomAnchored = true; break;
+        case "sign":    key = "sign_" + s.label; break;
+        case "cave":    key = "struct_cave";    bottomAnchored = true; break;
+        case "chest":   key = "struct_chest";   break;
+        case "decor":   key = "struct_" + DECORATIONS[s.decor].spriteKey; bottomAnchored = true; break;
         default: continue;
       }
       drawables.push({
         y: baseY,
         fn: () => {
           const spr = SpriteCache[key];
-          if (spr) ctx.drawImage(spr, ax - state.cam.x, ay - state.cam.y);
+          if (!spr) return;
+          let ax, ay;
+          if (bottomAnchored) {
+            // Anchor sprite bottom-center on the structure's footprint center.
+            const cx = (s.tx + s.w / 2) * TILE;
+            ax = cx - spr.width / 2;
+            ay = baseY - spr.height + 4;   // small footroom for shadow
+          } else {
+            ax = s.tx * TILE;
+            ay = s.ty * TILE;
+          }
+          ctx.drawImage(spr, ax - state.cam.x, ay - state.cam.y);
         }
       });
     }

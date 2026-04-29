@@ -593,14 +593,18 @@ function drawCompanion(ctx, c, cam) {
   else if (c.type === "fox_pet") key = `entity_companion_fox_${c.animFrame}`;
   else key = `entity_${c.def.spriteKey}_${c.animFrame}`;
   const spr = SpriteCache[key];
-  if (spr) ctx.drawImage(spr, c.x - cam.x - 16, c.y - cam.y - 22);
-  // hp bar
+  let drawTopY = c.y - cam.y - 22;
+  if (spr) {
+    const w = spr.width, h = spr.height;
+    drawTopY = c.y - cam.y - h + 4;
+    ctx.drawImage(spr, c.x - cam.x - w / 2, drawTopY);
+  }
   if (c.hp < c.hpMax) {
-    const w = 24;
+    const bw = 24;
     ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(c.x - cam.x - w / 2, c.y - cam.y - 28, w, 3);
+    ctx.fillRect(c.x - cam.x - bw / 2, drawTopY - 6, bw, 3);
     ctx.fillStyle = "#5fae8a";
-    ctx.fillRect(c.x - cam.x - w / 2, c.y - cam.y - 28, w * (c.hp / c.hpMax), 3);
+    ctx.fillRect(c.x - cam.x - bw / 2, drawTopY - 6, bw * (c.hp / c.hpMax), 3);
   }
 }
 
