@@ -134,9 +134,16 @@ function makeWorld() {
     },
     { id: "mat",     tx: 28, ty: 18, w: 1, h: 1, type: "mat",     solid: false },
     { id: "well",    tx: 35, ty: 21, w: 1, h: 1, type: "well",    solid: true },
-    { id: "bed",     tx: 33, ty: 18, w: 1, h: 1, type: "bed",     solid: false, hidden: true /* inside the house */ },
+    // Bed is logically inside the house — the house roof obscures it visually,
+    // so we mark it nodraw. solid:false so player can stand close enough
+    // (from the doorstep) to interact with it.
+    { id: "bed",     tx: 33, ty: 18, w: 1, h: 1, type: "bed",     solid: false, nodraw: true },
     { id: "desk",    tx: 30, ty: 25, w: 1, h: 1, type: "desk",    solid: false, built: false },
     { id: "furnace", tx: 32, ty: 25, w: 1, h: 1, type: "furnace", solid: false, built: false },
+    // New stations sit south of the farm row at y=27 (farm spans y=22..25)
+    { id: "stove",   tx: 28, ty: 27, w: 1, h: 1, type: "stove",   solid: false, built: false },
+    { id: "forge",   tx: 30, ty: 27, w: 1, h: 1, type: "forge",   solid: false, built: false },
+    { id: "loom",    tx: 32, ty: 27, w: 1, h: 1, type: "loom",    solid: false, built: false },
     { id: "merchant",tx: 51, ty: 20, w: 1, h: 1, type: "merchant",solid: false },
     { id: "sign_farm",   tx: 23, ty: 21, w: 1, h: 1, type: "sign", label: "Farm" },
     { id: "sign_forest", tx: 30, ty: 14, w: 1, h: 1, type: "sign", label: "Forest" },
@@ -154,12 +161,10 @@ function isSolidAt(world, px, py) {
   const ty = Math.floor(py / TILE);
   if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return true;
   if (SOLID_TILES.has(world.tiles[ty][tx])) return true;
-  // structures
   for (const s of world.structures) {
-    if (!s.solid || s.hidden) continue;
+    if (!s.solid) continue;
     if (tx >= s.tx && tx < s.tx + s.w && ty >= s.ty && ty < s.ty + s.h) {
-      // allow walking through doorstep
-      if (s.type === "house" && tx === 33 && ty === 19) return false;
+      if (s.type === "house" && tx === 33 && ty === 19) return false; // doorstep
       return true;
     }
   }
@@ -168,14 +173,6 @@ function isSolidAt(world, px, py) {
 
 function plotAt(world, tx, ty) {
   return world.plots.find((p) => p.tx === tx && p.ty === ty);
-}
-
-function structureAt(world, tx, ty) {
-  for (const s of world.structures) {
-    if (s.hidden) continue;
-    if (tx >= s.tx && tx < s.tx + s.w && ty >= s.ty && ty < s.ty + s.h) return s;
-  }
-  return null;
 }
 
 function drawTile(ctx, t, sx, sy) {
@@ -192,8 +189,7 @@ function drawWorld(ctx, world, cam) {
   // base tiles
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
-      const t = world.tiles[y][x];
-      drawTile(ctx, t === T_HERB ? T_HERB : t, x * TILE - cam.x, y * TILE - cam.y);
+      drawTile(ctx, world.tiles[y][x], x * TILE - cam.x, y * TILE - cam.y);
     }
   }
 
@@ -207,36 +203,3 @@ function drawWorld(ctx, world, cam) {
   }
 }
 
-function drawStructures(ctx, world, cam, behindOnly = false) {
-  const items = [];
-  for (const s of world.structures) {
-    if (s.hidden) continue;
-    if (s.type === "desk" && !s.built) continue;
-    if (s.type === "furnace" && !s.built) continue;
-    items.push(s);
-  }
-  // sort by ty for proper depth
-  items.sort((a, b) => (a.ty + a.h) - (b.ty + b.h));
-  for (const s of items) {
-    const drawY = (s.ty + s.h) * TILE; // baseline
-    let key, sw = 32, sh = 32, ax = 0, ay = 0;
-    switch (s.type) {
-      case "house":
-        key = s.tier > 0 ? "struct_house_upgraded" : "struct_house";
-        sw = 96; sh = 96;
-        ax = (s.tx + s.w / 2) * TILE - sw / 2;
-        ay = drawY - sh;
-        break;
-      case "mat":     key = "struct_mat";     ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "well":    key = "struct_well";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "desk":    key = "struct_desk";    ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "furnace": key = "struct_furnace"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "bed":     key = "struct_bed";     ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "merchant": key = "entity_merchant"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-      case "sign":    key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
-      default: continue;
-    }
-    const sprite = SpriteCache[key];
-    if (sprite) ctx.drawImage(sprite, ax - cam.x, ay - cam.y);
-  }
-}

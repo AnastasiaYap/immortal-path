@@ -22,6 +22,36 @@ const ITEMS = {
   // Materials
   talisman_paper: { name: "Talisman Paper", desc: "Yellow paper for inscribing.",              value: 6 },
   cinnabar_ink:   { name: "Cinnabar Ink",   desc: "Vermilion ink, channels qi.",               value: 10 },
+  iron_ore:       { name: "Iron Ore",       desc: "Mined from the stone outcrop. Smelts at the forge.", value: 8 },
+  jade_shard:     { name: "Jade Shard",     desc: "A sliver of spirit jade.",                  value: 32 },
+  spirit_silk:    { name: "Spirit Silk",    desc: "Soft fiber spun from spirit-rabbit fur.",   value: 24 },
+  flour:          { name: "Flour",          desc: "Ground rice flour. For dumplings and cakes.", value: 4 },
+
+  // Fish
+  minnow:         { name: "Minnow",         desc: "Small pond fish.",                          value: 8,   edible: 8 },
+  spirit_carp:    { name: "Spirit Carp",    desc: "Glow-scaled carp from the pond.",           value: 28,  edible: 14, qiRestore: 8 },
+  koi:            { name: "Koi",            desc: "Auspicious. Worth a small fortune.",        value: 110 },
+  moon_carp:      { name: "Moon Carp",      desc: "Bites only at night. Pristine flesh.",     value: 220, qiRestore: 30, hpRestore: 30 },
+
+  // Cooked food
+  spirit_congee:    { name: "Spirit Congee",    desc: "Hot porridge. Restores HP and qi.",                value: 38,  hpRestore: 25, qiRestore: 18, edible: 22 },
+  fish_broth:       { name: "Fish Broth",       desc: "Restorative broth.",                               value: 55,  hpRestore: 18, qiRestore: 10, edible: 30 },
+  pepper_dumplings: { name: "Pepper Dumplings", desc: "Fiery dumplings. Big stamina restore.",           value: 65,  edible: 30, staminaRestore: 60 },
+  moon_cake:        { name: "Moon Cake",        desc: "Mooncarp pastry. Big breakthrough boost.",        value: 240, breakthroughBoost: 0.3, qiRestore: 30 },
+
+  // Equipment — weapons
+  iron_sword:    { name: "Iron Sword",    desc: "+6 attack.",                                   value: 90,  equip: "weapon", dmg: 6 },
+  spirit_sword:  { name: "Spirit Sword",  desc: "+14 attack. Hums faintly with qi.",            value: 280, equip: "weapon", dmg: 14 },
+  // Equipment — robes
+  linen_robe:    { name: "Linen Robe",    desc: "+5 defense.",                                  value: 70,  equip: "robe", def: 5 },
+  spirit_robe:   { name: "Spirit Robe",   desc: "+15 defense, +0.3 qi/sec.",                    value: 320, equip: "robe", def: 15, qiRegen: 0.3 },
+  jade_robe:     { name: "Jade Robe",     desc: "+25 defense, +0.5 qi/sec, +20 max HP.",        value: 800, equip: "robe", def: 25, qiRegen: 0.5, hpMaxBonus: 20 },
+  // Equipment — accessories
+  jade_pendant:  { name: "Jade Pendant",  desc: "+20 max qi, +0.3 qi/sec.",                     value: 220, equip: "accessory", qiMaxBonus: 20, qiRegen: 0.3 },
+  spirit_ring:   { name: "Spirit Ring",   desc: "+15 max HP.",                                  value: 240, equip: "accessory", hpMaxBonus: 15 },
+
+  // Tools
+  fishing_rod:   { name: "Fishing Rod",   desc: "Bamboo pole. Required to fish at the pond.",   value: 0,   tool: "rod" },
 
   // Crafted talismans
   fire_talisman:    { name: "Fire Talisman",    desc: "Throw to burn a beast.",                    value: 25, throwable: true, dmg: 18 },
@@ -90,6 +120,74 @@ const RECIPES = {
     output: "dragon_blood_pill", qty: 1, station: "furnace",
     inputs: { dragon_scale: 1, qilin_horn: 1, qi_lotus: 4, beast_core: 3 }, qiCost: 200,
     label: "Dragon Blood Pill", unlockRealm: 4,
+  },
+
+  // -- Cooking (stove) --
+  spirit_congee: {
+    output: "spirit_congee", qty: 1, station: "stove",
+    inputs: { rice: 2, spirit_grain: 1 }, qiCost: 0,
+    label: "Spirit Congee", skillXp: { cooking: 12 },
+  },
+  fish_broth: {
+    output: "fish_broth", qty: 1, station: "stove",
+    inputs: { spirit_carp: 1, spirit_herb: 1 }, qiCost: 0,
+    label: "Fish Broth", skillXp: { cooking: 18 },
+  },
+  pepper_dumplings: {
+    output: "pepper_dumplings", qty: 2, station: "stove",
+    inputs: { blood_pepper: 1, flour: 2 }, qiCost: 0,
+    label: "Pepper Dumplings ×2", skillXp: { cooking: 22 },
+  },
+  moon_cake: {
+    output: "moon_cake", qty: 1, station: "stove",
+    inputs: { moon_carp: 1, flour: 2, qi_lotus: 1 }, qiCost: 5,
+    label: "Moon Cake", skillXp: { cooking: 50 },
+  },
+
+  // -- Smithing (forge) --
+  iron_sword: {
+    output: "iron_sword", qty: 1, station: "forge",
+    inputs: { iron_ore: 4 }, qiCost: 0,
+    label: "Iron Sword", skillXp: { smithing: 30 },
+  },
+  spirit_sword: {
+    output: "spirit_sword", qty: 1, station: "forge",
+    inputs: { iron_ore: 6, beast_core: 2, jade_shard: 1 }, qiCost: 8,
+    label: "Spirit Sword", skillXp: { smithing: 60 },
+  },
+  jade_pendant: {
+    output: "jade_pendant", qty: 1, station: "forge",
+    inputs: { jade_shard: 3, iron_ore: 1 }, qiCost: 5,
+    label: "Jade Pendant", skillXp: { smithing: 40 },
+  },
+  spirit_ring: {
+    output: "spirit_ring", qty: 1, station: "forge",
+    inputs: { beast_core: 2, jade_shard: 1, iron_ore: 1 }, qiCost: 8,
+    label: "Spirit Ring", skillXp: { smithing: 50 },
+  },
+
+  // -- Tailoring (loom) --
+  linen_robe: {
+    output: "linen_robe", qty: 1, station: "loom",
+    inputs: { spirit_silk: 3 }, qiCost: 0,
+    label: "Linen Robe", skillXp: { tailoring: 25 },
+  },
+  spirit_robe: {
+    output: "spirit_robe", qty: 1, station: "loom",
+    inputs: { spirit_silk: 5, qi_lotus: 1 }, qiCost: 5,
+    label: "Spirit Robe", skillXp: { tailoring: 50 },
+  },
+  jade_robe: {
+    output: "jade_robe", qty: 1, station: "loom",
+    inputs: { spirit_silk: 8, jade_shard: 3, beast_core: 2 }, qiCost: 12,
+    label: "Jade Robe", skillXp: { tailoring: 80 }, unlockRealm: 3,
+  },
+
+  // -- Misc rice → flour at stove --
+  flour: {
+    output: "flour", qty: 3, station: "stove",
+    inputs: { rice: 2 }, qiCost: 0,
+    label: "Mill Flour ×3", skillXp: { cooking: 4 },
   },
 };
 
@@ -201,13 +299,16 @@ const BEASTS = {
 
 // Market prices: buying seeds and supplies.
 const SHOP_BUY = [
-  { id: "rice_seed",         label: "Rice Seed",          price: 8,  give: { _seed: "rice" } },
-  { id: "spirit_grain_seed", label: "Spirit Grain Seed",  price: 30, give: { _seed: "spirit_grain" }, unlockRealm: 1 },
-  { id: "blood_pepper_seed", label: "Blood Pepper Seed",  price: 50, give: { _seed: "blood_pepper" }, unlockRealm: 1 },
-  { id: "qi_lotus_seed",     label: "Qi Lotus Seed",      price: 80, give: { _seed: "qi_lotus" }, unlockRealm: 2 },
-  { id: "talisman_paper",    label: "Talisman Paper x5",  price: 25, give: { talisman_paper: 5 } },
-  { id: "cinnabar_ink",      label: "Cinnabar Ink x3",    price: 25, give: { cinnabar_ink: 3 } },
-  { id: "rice_meal",         label: "Bowl of Rice (eat)", price: 5,  give: { rice: 1 } },
+  { id: "rice_seed",         label: "Rice Seed",            price: 8,   give: { _seed: "rice" } },
+  { id: "spirit_grain_seed", label: "Spirit Grain Seed",    price: 30,  give: { _seed: "spirit_grain" }, unlockRealm: 1 },
+  { id: "blood_pepper_seed", label: "Blood Pepper Seed",    price: 50,  give: { _seed: "blood_pepper" }, unlockRealm: 1 },
+  { id: "qi_lotus_seed",     label: "Qi Lotus Seed",        price: 80,  give: { _seed: "qi_lotus" }, unlockRealm: 2 },
+  { id: "talisman_paper",    label: "Talisman Paper ×5",    price: 25,  give: { talisman_paper: 5 } },
+  { id: "cinnabar_ink",      label: "Cinnabar Ink ×3",      price: 25,  give: { cinnabar_ink: 3 } },
+  { id: "flour",             label: "Flour ×5",             price: 18,  give: { flour: 5 } },
+  { id: "rice_meal",         label: "Bowl of Rice (eat)",   price: 5,   give: { rice: 1 } },
+  { id: "fishing_rod",       label: "Bamboo Fishing Rod",   price: 100, give: { _grant: "fishing_rod" } },
+  { id: "linen_bolt",        label: "Linen Bolt — silk ×3", price: 75,  give: { spirit_silk: 3 } },
 ];
 
 // House upgrade tiers
@@ -219,7 +320,24 @@ const HOUSE_TIERS = [
 
 // Building / structure unlocks
 const STRUCTURES = [
-  { id: "mat",     name: "Meditation Mat", cost: 0,   built: true,  desc: "Already in your yard." },
-  { id: "desk",    name: "Talisman Desk",  cost: 150, built: false, desc: "Inscribe talismans here." },
-  { id: "furnace", name: "Pill Furnace",   cost: 400, built: false, desc: "Refine pills from herbs and beast materials." },
+  { id: "mat",     name: "Meditation Mat", cost: 0,    built: true,  desc: "Already in your yard." },
+  { id: "desk",    name: "Talisman Desk",  cost: 150,  built: false, desc: "Inscribe talismans here." },
+  { id: "furnace", name: "Pill Furnace",   cost: 400,  built: false, desc: "Refine pills from herbs and beast materials." },
+  { id: "stove",   name: "Clay Stove",     cost: 120,  built: false, desc: "Cook produce and fish into restorative meals." },
+  { id: "forge",   name: "Smithy & Anvil", cost: 600,  built: false, desc: "Forge weapons and accessories from ore." },
+  { id: "loom",    name: "Spirit Loom",    cost: 500,  built: false, desc: "Weave silk and jade into protective robes." },
+];
+
+// Drops added by skill — not included in BEAST.drops because they depend on
+// foraging conditions. Spirit Silk is rolled separately for spirit rabbits.
+const RABBIT_SILK_CHANCE = 0.18;
+
+// Fish table: each entry has weight (luck-modified) and required time-of-day.
+const FISH_TABLE = [
+  { id: "minnow",       weight: 8,  minLuck: 0,  night: false, day: true  },
+  { id: "minnow",       weight: 5,  minLuck: 0,  night: true,  day: true  },
+  { id: "spirit_carp",  weight: 4,  minLuck: 0,  night: true,  day: true  },
+  { id: "spirit_carp",  weight: 6,  minLuck: 3,  night: true,  day: true  },
+  { id: "koi",          weight: 1,  minLuck: 5,  night: true,  day: true  },
+  { id: "moon_carp",    weight: 2,  minLuck: 4,  night: true,  day: false },
 ];

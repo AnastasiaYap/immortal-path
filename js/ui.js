@@ -61,16 +61,43 @@ function openModal(title, contentEl, actions = []) {
 // --- INVENTORY MODAL ---
 function openInventory(state) {
   const p = state.player;
+  p.equipped = p.equipped || { weapon: null, robe: null, accessory: null };
   const wrap = document.createElement("div");
-  // seeds
-  const sH = document.createElement("h3"); sH.textContent = "Seeds"; sH.style.marginTop = "0";
+
+  // -- Equipment row --
+  const eH = document.createElement("h3");
+  eH.textContent = "Equipment";
+  eH.style.marginTop = "0";
+  wrap.appendChild(eH);
+  for (const slot of ["weapon", "robe", "accessory"]) {
+    const id = p.equipped[slot];
+    const row = document.createElement("div"); row.className = "item-row";
+    if (id) {
+      row.innerHTML = `<span><b>${slot[0].toUpperCase() + slot.slice(1)}</b>: ${ITEMS[id].name} <i style="opacity:0.6">— ${ITEMS[id].desc}</i></span>`;
+      const btn = document.createElement("button");
+      btn.textContent = "Unequip";
+      btn.onclick = () => {
+        const r = unequipItem(p, slot);
+        if (r.msg) pushLog(state, r.msg, "");
+        openInventory(state);
+      };
+      row.appendChild(btn);
+    } else {
+      row.innerHTML = `<span><b>${slot[0].toUpperCase() + slot.slice(1)}</b>: <i style="opacity:0.6">empty</i></span>`;
+    }
+    wrap.appendChild(row);
+  }
+
+  // -- Seeds --
+  const sH = document.createElement("h3");
+  sH.textContent = "Seeds"; sH.style.marginTop = "12px";
   wrap.appendChild(sH);
   let any = false;
   for (const id in p.seeds) {
-    if ((p.seeds[id] || 0) <= 0) continue;
+    if ((p.seeds[id] || 0) <= 0) { delete p.seeds[id]; continue; }
     any = true;
     const row = document.createElement("div"); row.className = "item-row";
-    row.innerHTML = `<span><b>${CROPS[id].name} Seed</b> × ${p.seeds[id]} <i style="opacity:0.6">— stand on a tilled plot, then click Plant</i></span>`;
+    row.innerHTML = `<span><b>${CROPS[id].name} Seed</b> × ${p.seeds[id]} <i style="opacity:0.6">— face a tilled plot, then click Plant</i></span>`;
     const btn = document.createElement("button"); btn.textContent = "Plant";
     btn.onclick = () => {
       const r = tryPlantPlot(state, id);
@@ -82,8 +109,8 @@ function openInventory(state) {
   }
   if (!any) wrap.appendChild(textRow("(no seeds)"));
 
-  // items
-  const iH = document.createElement("h3"); iH.textContent = "Items";
+  // -- Items --
+  const iH = document.createElement("h3"); iH.textContent = "Items"; iH.style.marginTop = "12px";
   wrap.appendChild(iH);
   let anyItem = false;
   for (const id in p.inventory) {
@@ -94,16 +121,27 @@ function openInventory(state) {
     const row = document.createElement("div"); row.className = "item-row";
     row.innerHTML = `<span><b>${item.name}</b> × ${qty} <i style="opacity:0.6">— ${item.desc}</i></span>`;
     const actions = document.createElement("span");
-    if (item.edible || item.qiRestore || item.hpRestore || item.bodyBoost || item.breakthroughBoost) {
+    if (item.equip) {
+      const eb = document.createElement("button"); eb.textContent = "Equip";
+      eb.onclick = () => {
+        const r = equipItem(p, id);
+        if (r.msg) pushLog(state, r.msg, r.ok ? "good" : "bad");
+        openInventory(state);
+      };
+      actions.appendChild(eb);
+    }
+    if (item.edible || item.qiRestore || item.hpRestore || item.bodyBoost || item.breakthroughBoost || item.staminaRestore) {
       const useBtn = document.createElement("button"); useBtn.textContent = "Use";
+      useBtn.style.marginLeft = "4px";
       useBtn.onclick = () => {
         useItem(state, id);
-        openInventory(state); // refresh
+        openInventory(state);
       };
       actions.appendChild(useBtn);
     }
     if (item.useable === "ward") {
       const wb = document.createElement("button"); wb.textContent = "Activate";
+      wb.style.marginLeft = "4px";
       wb.onclick = () => {
         if (takeItem(p, id, 1)) {
           p.wardTimer = 18;
@@ -113,14 +151,18 @@ function openInventory(state) {
       };
       actions.appendChild(wb);
     }
-    if (item.value > 0 && id !== "fire_talisman" && id !== "ward_talisman") {
-      const sb = document.createElement("button"); sb.textContent = `Sell (${item.value})`;
+    const nonsellable = new Set(["fire_talisman", "ward_talisman", "purify_talisman", "fishing_rod"]);
+    if (item.value > 0 && !nonsellable.has(id)) {
+      const sellPrice = Math.floor(item.value * mercantrySellMul(p));
+      const sb = document.createElement("button");
+      sb.textContent = `Sell (${sellPrice})`;
       sb.style.marginLeft = "4px";
       sb.style.background = "#7a1f1a";
       sb.onclick = () => {
         if (takeItem(p, id, 1)) {
-          p.money += item.value;
-          pushLog(state, `Sold 1 ${item.name} for ${item.value} stones.`, "good");
+          p.money += sellPrice;
+          gainSkill(p, "mercantry", Math.max(1, Math.floor(sellPrice / 4)));
+          pushLog(state, `Sold 1 ${item.name} for ${sellPrice} stones.`, "good");
           openInventory(state);
         }
       };
@@ -138,18 +180,29 @@ function useItem(state, id) {
   const p = state.player;
   const item = ITEMS[id];
   if (!takeItem(p, id, 1)) return;
+  // Cooked food gets a cooking-skill potency multiplier.
+  const cookedIds = new Set(["spirit_congee", "fish_broth", "pepper_dumplings", "moon_cake"]);
+  const mul = cookedIds.has(id) ? cookingPotency(p) : 1;
   let parts = [];
   if (item.edible) {
-    p.hunger = Math.min(p.hungerMax, p.hunger + item.edible);
-    parts.push(`+${item.edible} hunger`);
+    const v = Math.round(item.edible * mul);
+    p.hunger = Math.min(p.hungerMax, p.hunger + v);
+    parts.push(`+${v} hunger`);
   }
   if (item.qiRestore) {
-    p.qi = Math.min(p.qiMax, p.qi + item.qiRestore);
-    parts.push(`+${item.qiRestore} qi`);
+    const v = Math.round(item.qiRestore * mul);
+    p.qi = Math.min(p.qiMax, p.qi + v);
+    parts.push(`+${v} qi`);
   }
   if (item.hpRestore) {
-    p.hp = Math.min(p.hpMax, p.hp + item.hpRestore);
-    parts.push(`+${item.hpRestore} HP`);
+    const v = Math.round(item.hpRestore * mul);
+    p.hp = Math.min(p.hpMax, p.hp + v);
+    parts.push(`+${v} HP`);
+  }
+  if (item.staminaRestore) {
+    const v = Math.round(item.staminaRestore * mul);
+    p.stamina = Math.min(p.staminaMax, p.stamina + v);
+    parts.push(`+${v} stamina`);
   }
   if (item.bodyBoost) {
     p.bodyBoost += item.bodyBoost;
@@ -173,29 +226,39 @@ function textRow(text) {
 // --- SHOP ---
 function openShop(state) {
   const p = state.player;
+  const buyMul = mercantryBuyMul(p);
+  const sellMul = mercantrySellMul(p);
   const wrap = document.createElement("div");
   const h = document.createElement("p");
   h.style.margin = "0 0 8px";
-  h.innerHTML = `<i>The merchant smiles. "Spirit Stones, friend?"</i> · You have <b>${p.money}</b>.`;
+  const lvl = skillLv(p, "mercantry");
+  const merchantHint = lvl > 0 ? ` · Mercantry lv${lvl}: prices ×${buyMul.toFixed(2)} / sell ×${sellMul.toFixed(2)}` : "";
+  h.innerHTML = `<i>The merchant smiles. "Spirit Stones, friend?"</i> · You have <b>${p.money}</b>.${merchantHint}`;
   wrap.appendChild(h);
 
   for (const offer of SHOP_BUY) {
     if (offer.unlockRealm && p.realmIndex < offer.unlockRealm) continue;
+    const isTool = offer.give && offer.give._grant === "fishing_rod";
+    if (isTool && p.hasFishingRod) continue;
+    const price = Math.max(1, Math.floor(offer.price * buyMul));
     const row = document.createElement("div"); row.className = "item-row";
     row.innerHTML = `<span><b>${offer.label}</b></span>`;
     const btn = document.createElement("button");
-    btn.textContent = `Buy (${offer.price})`;
-    btn.disabled = p.money < offer.price;
+    btn.textContent = `Buy (${price})`;
+    btn.disabled = p.money < price;
     btn.onclick = () => {
-      if (p.money < offer.price) return;
-      p.money -= offer.price;
+      if (p.money < price) return;
+      p.money -= price;
       for (const k in offer.give) {
         if (k === "_seed") {
           p.seeds[offer.give._seed] = (p.seeds[offer.give._seed] || 0) + 1;
+        } else if (k === "_grant") {
+          if (offer.give._grant === "fishing_rod") p.hasFishingRod = true;
         } else {
           addItem(p, k, offer.give[k]);
         }
       }
+      gainSkill(p, "mercantry", Math.max(1, Math.floor(price / 8)));
       pushLog(state, `Purchased ${offer.label}.`, "good");
       openShop(state);
     };
@@ -203,29 +266,31 @@ function openShop(state) {
     wrap.appendChild(row);
   }
 
-  // sell-all-produce convenience
   const sH = document.createElement("h3"); sH.textContent = "Sell Produce"; sH.style.marginTop = "12px";
   wrap.appendChild(sH);
   let total = 0;
+  const nonsellable = new Set(["fire_talisman", "ward_talisman", "purify_talisman", "fishing_rod"]);
   for (const id in p.inventory) {
     const item = ITEMS[id];
-    if (!item.value || id === "fire_talisman" || id === "ward_talisman") continue;
+    if (!item.value || nonsellable.has(id)) continue;
     const qty = p.inventory[id];
     if (qty <= 0) continue;
+    const unit = Math.floor(item.value * sellMul);
+    const tot = unit * qty;
     const row = document.createElement("div"); row.className = "item-row";
-    row.innerHTML = `<span><b>${item.name}</b> × ${qty} @ ${item.value}</span>`;
+    row.innerHTML = `<span><b>${item.name}</b> × ${qty} @ ${unit}</span>`;
     const btn = document.createElement("button");
-    btn.textContent = `Sell all (+${item.value * qty})`;
+    btn.textContent = `Sell all (+${tot})`;
     btn.onclick = () => {
-      const v = item.value * qty;
       delete p.inventory[id];
-      p.money += v;
-      pushLog(state, `Sold ${qty} ${item.name} for ${v} stones.`, "good");
+      p.money += tot;
+      gainSkill(p, "mercantry", Math.max(1, Math.floor(tot / 8)));
+      pushLog(state, `Sold ${qty} ${item.name} for ${tot} stones.`, "good");
       openShop(state);
     };
     row.appendChild(btn);
     wrap.appendChild(row);
-    total += item.value * qty;
+    total += tot;
   }
   if (total === 0) wrap.appendChild(textRow("(nothing sellable in pouch)"));
 
@@ -233,24 +298,36 @@ function openShop(state) {
 }
 
 // --- CRAFT ---
+const STATION_INFO = {
+  desk:    { title: "Talisman Inscription", flavor: "The talisman desk hums with latent qi. Brush and ink await.", skill: "talisman" },
+  furnace: { title: "Pill Refinement",      flavor: "The pill furnace glows. Combine herbs and beast cores.",       skill: "alchemy" },
+  stove:   { title: "Cooking Pot",           flavor: "The clay stove crackles. Produce becomes restorative meals.",  skill: "cooking" },
+  forge:   { title: "Forge",                 flavor: "Bellows hiss. Iron and jade yield to hammer and qi.",          skill: "smithing" },
+  loom:    { title: "Spirit Loom",           flavor: "Warp threads taut. Spin silk and jade into protective robes.", skill: "tailoring" },
+};
+
 function openCraft(state, station) {
   const p = state.player;
+  const info = STATION_INFO[station] || { title: "Workstation", flavor: "" };
   const wrap = document.createElement("div");
   const h = document.createElement("p");
   h.style.margin = "0 0 8px";
-  h.innerHTML = station === "desk"
-    ? `<i>The talisman desk hums with latent qi. Inscribe with brush and ink.</i>`
-    : `<i>The pill furnace glows. Combine herbs and beast cores.</i>`;
+  const lvl = info.skill ? skillLv(p, info.skill) : 0;
+  const lvlBit = info.skill ? ` · ${SKILLS[info.skill].name} lv${lvl}` : "";
+  h.innerHTML = `<i>${info.flavor}</i>${lvlBit}`;
   wrap.appendChild(h);
 
+  let any = false;
   for (const recipeId in RECIPES) {
     const r = RECIPES[recipeId];
     if (r.station !== station) continue;
     if (r.unlockRealm && p.realmIndex < r.unlockRealm) continue;
+    any = true;
     const row = document.createElement("div"); row.className = "item-row";
     const inputs = Object.entries(r.inputs)
       .map(([k, v]) => `${ITEMS[k].name} ×${v}`).join(", ");
-    row.innerHTML = `<span><b>${r.label}</b> <i style="opacity:0.6">— needs ${inputs}, ${r.qiCost} qi</i></span>`;
+    const qiBit = r.qiCost > 0 ? `, ${r.qiCost} qi` : "";
+    row.innerHTML = `<span><b>${r.label}</b> <i style="opacity:0.6">— needs ${inputs}${qiBit}</i></span>`;
     const btn = document.createElement("button");
     btn.textContent = "Craft";
     btn.disabled = !hasItems(p, r.inputs) || p.qi < r.qiCost;
@@ -262,7 +339,8 @@ function openCraft(state, station) {
     row.appendChild(btn);
     wrap.appendChild(row);
   }
-  openModal(station === "desk" ? "Talisman Inscription" : "Pill Refinement", wrap);
+  if (!any) wrap.appendChild(textRow("(no recipes available at your realm yet)"));
+  openModal(info.title, wrap);
 }
 
 // --- BUILD ---
@@ -355,6 +433,69 @@ function openBuild(state) {
   openModal("Build & Upgrade", wrap);
 }
 
+// --- SKILLS ---
+function openSkills(state) {
+  const p = state.player;
+  if (!p.skills) p.skills = makeFreshSkillBlock();
+  const wrap = document.createElement("div");
+  const intro = document.createElement("p");
+  intro.style.margin = "0 0 8px";
+  intro.innerHTML = `<i>Each skill levels from doing the work, and grants its own passive perks. Materials and recipes cross over — Farming feeds Cooking and Alchemy, Smithing buffs Combat, Tailoring buffs Cultivation, Mercantry sweetens every coin.</i>`;
+  wrap.appendChild(intro);
+
+  for (const id of SKILL_ORDER) {
+    const s = p.skills[id] || { xp: 0, level: 0 };
+    const def = SKILLS[id];
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.style.flexDirection = "column";
+    row.style.alignItems = "stretch";
+
+    const head = document.createElement("div");
+    head.style.display = "flex";
+    head.style.justifyContent = "space-between";
+    head.innerHTML = `<span><b>${def.name}</b> <span style="opacity:0.6">— lv ${s.level}</span></span><span style="opacity:0.6">${Math.floor(s.xp)} / ${xpForLevel(s.level + 1)} XP</span>`;
+    row.appendChild(head);
+
+    // progress bar
+    const bar = document.createElement("div");
+    bar.style.cssText = "height:6px; background:#c9b994; border:1px solid #8a7a55; border-radius:2px; margin:4px 0; position:relative; overflow:hidden;";
+    const prevReq = xpForLevel(s.level);
+    const nextReq = xpForLevel(s.level + 1);
+    const pct = nextReq > prevReq ? Math.max(0, Math.min(1, (s.xp - prevReq) / (nextReq - prevReq))) : 0;
+    const fill = document.createElement("div");
+    fill.style.cssText = `height:100%; width:${(pct * 100).toFixed(1)}%; background:linear-gradient(90deg,#5fae8a,#9bd185);`;
+    bar.appendChild(fill);
+    row.appendChild(bar);
+
+    const desc = document.createElement("div");
+    desc.style.cssText = "font-size:12px; opacity:0.8;";
+    desc.innerHTML = `${def.desc}<br/>${skillPerkLine(p, id)}`;
+    row.appendChild(desc);
+
+    wrap.appendChild(row);
+  }
+  openModal("Skills & Cultivation Arts", wrap);
+}
+
+function skillPerkLine(p, id) {
+  const lvl = skillLv(p, id);
+  switch (id) {
+    case "farming":     return `<b>Now:</b> +${(farmingYieldMul(p)*100-100).toFixed(0)}% yield, ${(farmingDoubleChance(p)*100).toFixed(0)}% double-harvest, ${((1-farmingStaminaMul(p))*100).toFixed(0)}% less stamina cost.`;
+    case "foraging":    return `<b>Now:</b> ${(foragingDoubleChance(p)*100).toFixed(0)}% double-pick chance.`;
+    case "cooking":     return `<b>Now:</b> meals are ${(cookingPotency(p)*100-100).toFixed(0)}% more potent, ${(cookingDoubleChance(p)*100).toFixed(0)}% double-cook.`;
+    case "fishing":     return `<b>Now:</b> +${lvl} luck (rarer fish unlock at higher levels), bites come ${((1-fishingTimeMul(p))*100).toFixed(0)}% sooner.`;
+    case "combat":      return `<b>Now:</b> +${combatDmgBonus(p)} sword damage.`;
+    case "cultivation": return `<b>Now:</b> +${(cultivationGainMul(p)*100-100).toFixed(0)}% qi/cult gain, +${cultivationRegenBonus(p).toFixed(2)} qi/sec passive.`;
+    case "alchemy":     return `<b>Now:</b> ${(alchemyDoubleChance(p)*100).toFixed(0)}% double-pill, ${(alchemyRefundChance(p)*100).toFixed(0)}% material refund.`;
+    case "talisman":    return `<b>Now:</b> ${(talismanDoubleChance(p)*100).toFixed(0)}% double-talisman.`;
+    case "smithing":    return `<b>Now:</b> +${smithingDmgBonus(p)} damage on forged weapons, ${(smithingDoubleChance(p)*100).toFixed(0)}% double-forge, better mining yields.`;
+    case "tailoring":   return `<b>Now:</b> +${tailoringDefBonus(p)} defense on woven robes.`;
+    case "mercantry":   return `<b>Now:</b> buy at ×${mercantryBuyMul(p).toFixed(2)}, sell at ×${mercantrySellMul(p).toFixed(2)}.`;
+    default: return "";
+  }
+}
+
 // --- HELP ---
 function openHelp() {
   const html = `
@@ -367,7 +508,7 @@ function openHelp() {
   <li><b>Q</b> — throw a Fire Talisman (if you have any)</li>
   <li><b>M</b> — meditate (must stand on the meditation mat)</li>
   <li><b>R</b> — attempt a breakthrough (when ready)</li>
-  <li><b>I</b> — inventory · <b>C</b> — craft (at desk/furnace) · <b>B</b> — build (anywhere)</li>
+  <li><b>I</b> — inventory & equipment · <b>K</b> — skills · <b>C</b> — craft (near desk/furnace/stove/forge/loom) · <b>B</b> — build (anywhere)</li>
   <li><b>1</b> — sleep (must be on bed inside house) · <b>Tab</b> — this help</li>
 </ul>
 <h3>Loop</h3>

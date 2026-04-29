@@ -24,13 +24,14 @@ Any modern browser works.
 | Key | Action |
 | --- | --- |
 | **WASD** / arrows | Move |
-| **E** | Interact (till, plant, water, harvest, NPCs, signs, structures) |
+| **E** | Interact (till, plant, water, harvest, forage, fish, mine, NPCs, signs, structures) |
 | **F** | Melee attack |
-| **Q** | Throw fire talisman |
+| **Q** | Throw fire / purification talisman |
 | **M** | Meditate (must stand on the meditation mat) |
 | **R** | Attempt breakthrough (when cultivation full + qi >= 90%) |
-| **I** | Inventory & seed pouch |
-| **C** | Craft (must be near desk or furnace) |
+| **I** | Inventory, seed pouch & equipment slots |
+| **K** | Skills panel — see levels and active perks |
+| **C** | Craft (near desk, furnace, stove, forge, or loom) |
 | **B** | Build / upgrade |
 | **1** | Sleep (must be near the bed inside the house) |
 | **Tab** | Help |
@@ -54,6 +55,51 @@ Any modern browser works.
    can inscribe Fire/Ward Talismans and refine Qi/Body/Foundation Pills.
 7. **Build** — upgrade your hut to a Timber House and then a Spirit Courtyard
    for better qi regen and bigger sleep restoration.
+
+## Skills
+
+Eleven skills level from doing the work, each granting a transparent passive
+perk. Press **K** to see them.
+
+| Skill | Source of XP | Perk per level (selected) |
+| --- | --- | --- |
+| Farming | till / water / harvest | +5% yield, double-harvest chance, less stamina cost |
+| Foraging | picking spirit herbs | double-pick chance |
+| Cooking | crafting at the **stove** | meals more potent, double-cook chance |
+| Fishing | reeling fish at the pond | +1 luck, faster bites, rarer fish |
+| Sword Mastery | melee attacks and kills | +1 sword damage |
+| Cultivation | meditating, breakthroughs | +4% qi/cult gain, +qi/sec passive |
+| Alchemy | crafting at the **furnace** | double-pill chance, ingredient refund |
+| Talisman | crafting at the **desk** | double-talisman chance |
+| Smithing | mining ore + crafting at the **forge** | flat damage on forged weapons, better ore yields |
+| Tailoring | crafting at the **loom** | flat defense on woven robes |
+| Mercantry | every buy/sell at the market | lower buy prices, higher sell prices |
+
+**Synergies are material-based**: Farming feeds Cooking and Alchemy, Fishing
+feeds Cooking, Smithing buffs Combat, Tailoring buffs Cultivation (qi regen),
+Mercantry sweetens every coin.
+
+## New Activities
+
+- **Fishing** — buy a Bamboo Fishing Rod at the market (100 stones), face a
+  water tile, press **E** to cast. Wait for the bobber to dance, then press
+  **E** again within ~0.85s to reel in. Higher Fishing skill bites faster
+  and unlocks Spirit Carp, Koi, and the night-only Moon Carp.
+- **Mining** — face a stone tile in the south-east outcrop, press **E** to
+  swing your hoe at the rock. Drops Iron Ore and (rarely) Jade Shard. Levels
+  Smithing.
+- **Cooking** at the Clay Stove turns rice/grain/peppers/fish into Spirit
+  Congee, Fish Broth, Pepper Dumplings, and the prized Moon Cake.
+- **Smithing** at the Forge produces the Iron Sword, Spirit Sword, Jade
+  Pendant, and Spirit Ring (equippable weapons + accessories).
+- **Tailoring** at the Spirit Loom weaves Linen / Spirit / Jade Robes
+  (defense + qi regen + max HP bonuses).
+
+## Equipment
+
+Three slots — **weapon**, **robe**, **accessory** — managed from the
+inventory pouch. Equipping an item mutates your stats: weaponDmg goes up,
+robes raise defense and qi-regen, accessories raise max-HP/qi.
 
 ## Realms
 
@@ -93,11 +139,12 @@ index.html
 css/style.css
 js/
   sprites.js     procedural chibi sprite generator (tiles, beasts, structures)
-  data.js        items, crops, recipes, realms, beasts, shop, build tiers
+  data.js        items, crops, recipes, realms, beasts, shop, build tiers, fish table
+  skills.js      skill definitions, XP curve, level perks, equipment helpers
   world.js       map gen, tile rendering, plot state, structure layout
   entities.js    player / beast / projectile / fx structs and drawing
-  systems.js     time, needs, AI, combat, farming, cultivation, crafting
-  ui.js          HUD, modals (inventory, shop, craft, build, help), save/load
+  systems.js     time, needs, AI, combat, farming, fishing, mining, cultivation, crafting
+  ui.js          HUD, modals (inventory+equipment, skills, shop, craft, build, help), save/load
   game.js        main loop, input, interaction, scene composition
 ```
 

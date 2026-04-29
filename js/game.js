@@ -139,12 +139,12 @@
     const tx = Math.floor((p.x + facingDx(p) * 16) / TILE);
     const ty = Math.floor((p.y + facingDy(p) * 16) / TILE);
 
-    // check structure within 1.5 tiles
+    // check structure within 1.5 tiles (nodraw structures like the bed are
+    // still interactable — they just don't render).
     let nearStruct = null;
     let nearStructDist = Infinity;
     for (const s of state.world.structures) {
-      if (s.hidden) continue;
-      if ((s.type === "desk" || s.type === "furnace") && !s.built) continue;
+      if (s.built === false) continue;
       const cx = (s.tx + s.w / 2) * TILE;
       const cy = (s.ty + s.h / 2) * TILE;
       const d = Math.hypot(cx - p.x, cy - p.y);
@@ -153,18 +153,15 @@
     if (nearStruct) {
       switch (nearStruct.type) {
         case "merchant": openShop(state); return;
-        case "desk": openCraft(state, "desk"); return;
+        case "desk":    openCraft(state, "desk"); return;
         case "furnace": openCraft(state, "furnace"); return;
+        case "stove":   openCraft(state, "stove"); return;
+        case "forge":   openCraft(state, "forge"); return;
+        case "loom":    openCraft(state, "loom"); return;
         case "well":
-          {
-            const r = tryWaterPlot(state);
-            if (r) { pushLog(state, r.msg, r.kind); return; }
-            // standing at well but no plot facing — maybe drink
-            const wp = state.player;
-            wp.hunger = Math.min(wp.hungerMax, wp.hunger + 4);
-            pushLog(state, "You drink cool well water.", "good");
-            return;
-          }
+          state.player.hunger = Math.min(state.player.hungerMax, state.player.hunger + 4);
+          pushLog(state, "You drink cool well water.", "good");
+          return;
         case "mat":
           state.meditating = !state.meditating;
           pushLog(state,
@@ -172,8 +169,7 @@
             "qi");
           return;
         case "house":
-          // step on doorstep + E enters; but we conceptually treat sleep as "1" key on bed
-          pushLog(state, "Press 1 inside (or near the bed) to sleep.", "");
+          pushLog(state, "Press 1 near your bed to sleep.", "");
           return;
         case "sign":
           pushLog(state, signMessage(nearStruct.label), "");
@@ -189,10 +185,30 @@
 
     // herb forage
     if (t === T_HERB) {
-      addItem(p, "spirit_herb", 1);
-      state.world.tiles[ty][tx] = T_GRASS;
-      p.cultProgress += 1;
-      pushLog(state, "Foraged a Spirit Herb.", "good");
+      const r = tryForageHerb(state, tx, ty);
+      if (r) { pushLog(state, r.msg, r.kind); return; }
+    }
+
+    // fishing
+    if (t === T_WATER) {
+      if (state.fishing && state.fishing.bit) {
+        const r = reelFish(state);
+        if (r) pushLog(state, r.msg, r.kind);
+        return;
+      }
+      if (state.fishing) {
+        pushLog(state, "Wait for a bite...", "");
+        return;
+      }
+      const r = tryStartFishing(state);
+      if (r) pushLog(state, r.msg, r.kind);
+      return;
+    }
+
+    // mining
+    if (t === T_STONE) {
+      const r = tryMineStone(state);
+      if (r) pushLog(state, r.msg, r.kind);
       return;
     }
 
@@ -202,6 +218,12 @@
       if (plot.crop && plot.growth >= 2) {
         const r = tryHarvestPlot(state);
         if (r) { pushLog(state, r.msg, r.kind); return; }
+      } else if (plot.crop && !plot.wateredToday) {
+        const r = tryWaterPlot(state);
+        if (r) { pushLog(state, r.msg, r.kind); return; }
+      } else if (plot.crop) {
+        pushLog(state, `${CROPS[plot.crop].name} is growing. Water it tomorrow.`, "");
+        return;
       } else if (plot.state === "tilled" || plot.state === "watered") {
         // open seed picker
         openInventory(state);
@@ -209,14 +231,6 @@
       } else if (plot.state === "dirt") {
         const r = tryTillPlot(state);
         if (r) { pushLog(state, r.msg, r.kind); return; }
-      } else if (plot.state === "growing") {
-        if (!plot.wateredToday) {
-          // show hint
-          pushLog(state, "Bring water from the well to nourish this crop.", "");
-        } else {
-          pushLog(state, `${CROPS[plot.crop].name} is growing. Water it tomorrow.`, "");
-        }
-        return;
       }
     }
 
@@ -294,6 +308,7 @@
     }
 
     tickNeeds(state.player, dt);
+    tickFishing(state, dt);
     updatePlayer(dt);
 
     // meditation
@@ -335,10 +350,11 @@
       }
     }
     if (state.keysPressed["i"]) openInventory(state);
+    if (state.keysPressed["k"]) openSkills(state);
     if (state.keysPressed["c"]) {
       const station = nearestCraftStation(state);
       if (station) openCraft(state, station);
-      else pushLog(state, "Stand near a desk or furnace to craft.", "bad");
+      else pushLog(state, "Stand near a desk, furnace, stove, forge, or loom to craft.", "bad");
     }
     if (state.keysPressed["b"]) openBuild(state);
     if (state.keysPressed["1"]) {
@@ -390,17 +406,13 @@
   }
 
   function nearestCraftStation(state) {
-    const desk = state.world.structures.find((s) => s.id === "desk");
-    const furn = state.world.structures.find((s) => s.id === "furnace");
     const p = state.player;
     let best = null, bestD = TILE * 1.5;
-    if (desk && desk.built) {
-      const d = Math.hypot((desk.tx + 0.5) * TILE - p.x, (desk.ty + 0.5) * TILE - p.y);
-      if (d < bestD) { best = "desk"; bestD = d; }
-    }
-    if (furn && furn.built) {
-      const d = Math.hypot((furn.tx + 0.5) * TILE - p.x, (furn.ty + 0.5) * TILE - p.y);
-      if (d < bestD) { best = "furnace"; bestD = d; }
+    for (const sid of ["desk", "furnace", "stove", "forge", "loom"]) {
+      const s = state.world.structures.find((x) => x.id === sid);
+      if (!s || !s.built) continue;
+      const d = Math.hypot((s.tx + 0.5) * TILE - p.x, (s.ty + 0.5) * TILE - p.y);
+      if (d < bestD) { best = sid; bestD = d; }
     }
     return best;
   }
@@ -418,18 +430,21 @@
     drawables.push({ y: state.player.y, fn: () => drawPlayer_(ctx, state.player, state.cam) });
     for (const b of state.beasts) drawables.push({ y: b.y, fn: () => drawBeast_(ctx, b, state.cam) });
     for (const s of state.world.structures) {
-      if (s.hidden) continue;
-      if ((s.type === "desk" || s.type === "furnace") && !s.built) continue;
+      if (s.nodraw) continue;
+      if (s.built === false) continue;  // unbuilt craft stations
       let baseY = (s.ty + s.h) * TILE;
       let key, sw = TILE, sh = TILE, ax, ay;
       switch (s.type) {
         case "house": key = s.tier > 0 ? "struct_house_upgraded" : "struct_house"; sw = 96; sh = 96; ax = (s.tx + s.w / 2) * TILE - sw / 2; ay = baseY - sh; break;
-        case "mat": key = "struct_mat"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "well": key = "struct_well"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "desk": key = "struct_desk"; ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "mat":     key = "struct_mat";     ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "well":    key = "struct_well";    ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "desk":    key = "struct_desk";    ax = s.tx * TILE; ay = s.ty * TILE; break;
         case "furnace": key = "struct_furnace"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "merchant": key = "entity_merchant"; ax = s.tx * TILE; ay = s.ty * TILE; break;
-        case "sign": key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "stove":   key = "struct_stove";   ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "forge":   key = "struct_forge";   ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "loom":    key = "struct_loom";    ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "merchant":key = "entity_merchant";ax = s.tx * TILE; ay = s.ty * TILE; break;
+        case "sign":   key = "sign_" + s.label; ax = s.tx * TILE; ay = s.ty * TILE; break;
         default: continue;
       }
       drawables.push({
@@ -447,6 +462,26 @@
     for (const p of state.projectiles) drawProjectile_(ctx, p, state.cam);
     // fx
     for (const f of state.fx) drawFx_(ctx, f, state.cam);
+
+    // fishing bobber
+    if (state.fishing) {
+      const f = state.fishing;
+      const bob = f.bit ? Math.sin(performance.now() / 60) * 3 : Math.sin(performance.now() / 200);
+      const bobber = SpriteCache["fx_bobber"];
+      if (bobber) ctx.drawImage(bobber, f.bobberX - state.cam.x - 8, f.bobberY - state.cam.y - 8 + bob);
+      if (f.bit) {
+        ctx.fillStyle = "#ffd048";
+        ctx.font = "bold 14px Georgia";
+        ctx.textAlign = "center";
+        ctx.fillText("!", f.bobberX - state.cam.x, f.bobberY - state.cam.y - 14);
+      }
+      // line from player to bobber
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.beginPath();
+      ctx.moveTo(state.player.x - state.cam.x, state.player.y - state.cam.y - 12);
+      ctx.lineTo(f.bobberX - state.cam.x, f.bobberY - state.cam.y);
+      ctx.stroke();
+    }
 
     // night overlay
     const dark = nightOverlay(state.time);
@@ -479,32 +514,37 @@
 
     // structure
     for (const s of state.world.structures) {
-      if (s.hidden) continue;
-      if ((s.type === "desk" || s.type === "furnace") && !s.built) continue;
+      if (s.built === false) continue;
       const cx = (s.tx + s.w / 2) * TILE;
       const cy = (s.ty + s.h / 2) * TILE;
       if (Math.hypot(cx - p.x, cy - p.y) < TILE * 1.5) {
         switch (s.type) {
           case "merchant": label = "E: Trade"; break;
-          case "desk": label = "E: Inscribe"; break;
+          case "desk":    label = "E: Inscribe"; break;
           case "furnace": label = "E: Refine"; break;
-          case "well": label = "E: Water / Drink"; break;
-          case "mat": label = "M: Meditate"; break;
-          case "bed": label = "1: Sleep"; break;
-          case "sign": label = "E: Read"; break;
+          case "stove":   label = "E: Cook"; break;
+          case "forge":   label = "E: Forge"; break;
+          case "loom":    label = "E: Weave"; break;
+          case "well":    label = "E: Drink"; break;
+          case "mat":     label = "M: Meditate"; break;
+          case "bed":     label = "1: Sleep"; break;
+          case "sign":    label = "E: Read"; break;
         }
         if (label) { anchor = { x: cx, y: (s.ty) * TILE }; break; }
       }
     }
     if (!label) {
       const t = state.world.tiles[ty]?.[tx];
-      if (t === T_HERB) { label = "E: Forage"; anchor = { x: tx * TILE + 16, y: ty * TILE }; }
+      if (t === T_HERB)  { label = "E: Forage";  anchor = { x: tx * TILE + 16, y: ty * TILE }; }
+      else if (t === T_WATER) { label = state.fishing && state.fishing.bit ? "E: Reel!" : (state.fishing ? "Waiting..." : "E: Fish"); anchor = { x: tx * TILE + 16, y: ty * TILE }; }
+      else if (t === T_STONE) { label = "E: Mine"; anchor = { x: tx * TILE + 16, y: ty * TILE }; }
       const plot = plotAt(state.world, tx, ty);
       if (plot) {
-        if (plot.state === "dirt") label = "E: Till";
+        if (plot.crop && plot.growth >= 2) label = "E: Harvest";
+        else if (plot.crop && !plot.wateredToday) label = "E: Water";
+        else if (plot.crop) label = "Growing...";
         else if (plot.state === "tilled" || plot.state === "watered") label = "E: Plant (opens pouch)";
-        else if (plot.crop && plot.growth >= 2) label = "E: Harvest";
-        else if (plot.state === "growing") label = "Growing...";
+        else if (plot.state === "dirt") label = "E: Till";
         anchor = { x: tx * TILE + 16, y: ty * TILE };
       }
     }
@@ -524,12 +564,6 @@
   }
 
   // --- BOOT ---
-  function pushLogPublic(state, msg, kind) {
-    state.logQueue.push({ msg, kind: kind || "" });
-  }
-  // expose for systems.js
-  window.pushLogVisible = pushLogVisible;
-
   document.getElementById("btn-new").onclick = () => {
     document.getElementById("title-screen").classList.add("hidden");
     newGame();

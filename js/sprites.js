@@ -862,6 +862,128 @@ function drawHerb(ctx) {
   ctx.beginPath(); ctx.arc(16, 10, 5, 0, Math.PI * 2); ctx.fill();
 }
 
+function drawStove(ctx) {
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.ellipse(16, 30, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // brick body
+  ctx.fillStyle = "#8a4a28";
+  ctx.fillRect(6, 12, 20, 16);
+  ctx.strokeStyle = "#5a2a18";
+  for (let y = 14; y <= 24; y += 4) {
+    ctx.beginPath();
+    ctx.moveTo(6, y);
+    ctx.lineTo(26, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(y % 8 === 0 ? 11 : 16, y);
+    ctx.lineTo(y % 8 === 0 ? 11 : 16, y + 4);
+    ctx.stroke();
+  }
+  // wok on top
+  ctx.fillStyle = "#3a3a3a";
+  ctx.beginPath(); ctx.ellipse(16, 12, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#5a5a5a";
+  ctx.fillRect(7, 11, 18, 1);
+  // mouth (fire)
+  ctx.fillStyle = "#1a1410";
+  ctx.fillRect(11, 17, 10, 7);
+  ctx.fillStyle = "#ff7028";
+  ctx.fillRect(13, 19, 6, 4);
+  ctx.fillStyle = "#ffd070";
+  ctx.fillRect(14, 20, 4, 2);
+  // smoke wisps
+  ctx.fillStyle = "rgba(180,180,180,0.6)";
+  ctx.beginPath(); ctx.arc(15, 8, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, 5, 1.5, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawForge(ctx) {
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // hearth box behind anvil
+  ctx.fillStyle = "#5a3018";
+  ctx.fillRect(7, 4, 18, 14);
+  ctx.fillStyle = "#7a4028";
+  ctx.fillRect(7, 4, 18, 2);
+  // chimney
+  ctx.fillStyle = "#3a2010";
+  ctx.fillRect(13, -1, 6, 6);
+  ctx.fillStyle = "rgba(180,180,180,0.6)";
+  ctx.beginPath(); ctx.arc(16, -2, 2, 0, Math.PI * 2); ctx.fill();
+  // fire inside hearth
+  ctx.fillStyle = "#ff7028";
+  ctx.fillRect(10, 8, 12, 7);
+  ctx.fillStyle = "#ffd070";
+  ctx.fillRect(12, 10, 8, 4);
+  ctx.fillStyle = "#fff5c0";
+  ctx.fillRect(14, 11, 4, 2);
+  // anvil
+  ctx.fillStyle = "#5a5a5a";
+  ctx.fillRect(8, 20, 16, 4);
+  ctx.fillStyle = "#7a7a7a";
+  ctx.fillRect(4, 18, 24, 3);
+  ctx.fillStyle = "#3a3a3a";
+  ctx.fillRect(10, 24, 12, 4);
+  // hammer resting on anvil
+  ctx.fillStyle = "#704c25";
+  ctx.fillRect(20, 12, 1, 7);
+  ctx.fillStyle = "#5a5a5a";
+  ctx.fillRect(18, 12, 5, 2);
+  // sparks
+  ctx.fillStyle = "rgba(255, 240, 100, 0.8)";
+  pixel(ctx, 12, 17, "rgba(255, 240, 100, 0.8)");
+  pixel(ctx, 22, 16, "rgba(255, 240, 100, 0.8)");
+}
+
+function drawLoom(ctx) {
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // wooden frame
+  ctx.fillStyle = "#704c25";
+  ctx.fillRect(4, 4, 3, 24);
+  ctx.fillRect(25, 4, 3, 24);
+  ctx.fillRect(4, 4, 24, 3);
+  ctx.fillRect(4, 25, 24, 3);
+  // vertical warp threads
+  ctx.strokeStyle = "#f3e7c9";
+  ctx.lineWidth = 1;
+  for (let x = 9; x <= 23; x += 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, 7);
+    ctx.lineTo(x, 25);
+    ctx.stroke();
+  }
+  // partial purple fabric at bottom (woven)
+  ctx.fillStyle = "#a85ac0";
+  ctx.fillRect(7, 17, 18, 8);
+  ctx.fillStyle = "#c890e0";
+  for (let y = 17; y < 25; y += 2) {
+    ctx.fillRect(7, y, 18, 1);
+  }
+  // shuttle
+  ctx.fillStyle = "#3a2010";
+  ctx.fillRect(20, 15, 6, 2);
+  ctx.fillStyle = "#d4a548";
+  pixel(ctx, 25, 15, "#d4a548");
+  // thread spools at top
+  ctx.fillStyle = "#c890e0";
+  ctx.beginPath(); ctx.arc(11, 6, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#5fae8a";
+  ctx.beginPath(); ctx.arc(21, 6, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawFishingBobber(ctx) {
+  // 16x16 — a small red-and-white float
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.arc(8, 12, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#c43a31";
+  ctx.beginPath(); ctx.arc(8, 8, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#f3e7c9";
+  ctx.beginPath(); ctx.arc(8, 8, 4, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = "#1a1410";
+  ctx.fillRect(7, 4, 2, 1);
+}
+
 function drawSignpost(ctx, label) {
   ctx.fillStyle = "rgba(0,0,0,0.3)";
   ctx.beginPath(); ctx.ellipse(16, 30, 7, 2, 0, 0, Math.PI * 2); ctx.fill();
@@ -999,6 +1121,22 @@ function buildSprites() {
   const deskC = makeCanvas(TILE, TILE);
   drawTalismanDesk(deskC.getContext("2d"));
   SpriteCache["struct_desk"] = deskC;
+
+  const stoveC = makeCanvas(TILE, TILE);
+  drawStove(stoveC.getContext("2d"));
+  SpriteCache["struct_stove"] = stoveC;
+
+  const forgeC = makeCanvas(TILE, TILE);
+  drawForge(forgeC.getContext("2d"));
+  SpriteCache["struct_forge"] = forgeC;
+
+  const loomC = makeCanvas(TILE, TILE);
+  drawLoom(loomC.getContext("2d"));
+  SpriteCache["struct_loom"] = loomC;
+
+  const bobberC = makeCanvas(16, 16);
+  drawFishingBobber(bobberC.getContext("2d"));
+  SpriteCache["fx_bobber"] = bobberC;
 
   const bedC = makeCanvas(TILE, TILE);
   drawBed(bedC.getContext("2d"));

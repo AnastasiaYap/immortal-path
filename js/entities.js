@@ -21,17 +21,23 @@ function makePlayer(spawn) {
     hunger: 100, hungerMax: 100,
 
     money: 30,
-    inventory: { rice: 0 },
+    inventory: {},
     seeds: { rice: 5 },
 
     weaponDmg: 8,
+    bonusDef: 0,            // from equipped robes
+    bonusQiRegen: 0,        // from robes / accessories
     bodyBoost: 0,           // bonus hpMax that activates next dawn
     breakthroughBoost: 0,   // bonus % chance for next breakthrough attempt
     wardTimer: 0,           // active ward duration in seconds
 
     hasWateringCan: true,
+    hasFishingRod: false,
     hoeTier: 0,             // 0 = wood, 1 = iron
     houseTier: 0,
+
+    skills: makeFreshSkillBlock(),
+    equipped: { weapon: null, robe: null, accessory: null },
   };
 }
 
