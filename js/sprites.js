@@ -357,6 +357,311 @@ function drawBeastWolf(ctx, frame) {
   pixel(ctx, 18, 14 + bob, "#fff");
 }
 
+function drawBeastGui(ctx, frame) {
+  // Hungry ghost: pale wisp body, no legs, hollow eyes
+  const bob = frame ? -2 : 0;
+  ctx.fillStyle = "rgba(140, 200, 230, 0.25)";
+  ctx.beginPath(); ctx.arc(16, 18 + bob, 13, 0, Math.PI * 2); ctx.fill();
+  // wispy tail (instead of legs)
+  ctx.fillStyle = "rgba(200, 220, 240, 0.85)";
+  ctx.beginPath();
+  ctx.moveTo(8, 18 + bob);
+  ctx.quadraticCurveTo(11, 30, 16, 28);
+  ctx.quadraticCurveTo(21, 30, 24, 18 + bob);
+  ctx.closePath();
+  ctx.fill();
+  // body
+  ctx.fillStyle = "#d8e8f0";
+  ctx.beginPath(); ctx.ellipse(16, 18 + bob, 8, 7, 0, 0, Math.PI * 2); ctx.fill();
+  // head (chibi big)
+  ctx.fillStyle = "#c8dce8";
+  ctx.beginPath(); ctx.arc(16, 10 + bob, 7, 0, Math.PI * 2); ctx.fill();
+  // hollow eyes
+  ctx.fillStyle = "#0a0a14";
+  ctx.beginPath(); ctx.arc(13, 10 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(19, 10 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  // eye glow
+  ctx.fillStyle = "#4ad0ff";
+  pixel(ctx, 13, 10 + bob, "#4ad0ff");
+  pixel(ctx, 19, 10 + bob, "#4ad0ff");
+  // gaping mouth
+  ctx.fillStyle = "#1a0a14";
+  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 2, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // floating dots
+  ctx.fillStyle = "rgba(180, 220, 255, 0.7)";
+  pixel(ctx, 4, 6, "rgba(180, 220, 255, 0.7)", 2);
+  pixel(ctx, 26, 9, "rgba(180, 220, 255, 0.7)", 2);
+}
+
+function drawBeastJiangshi(ctx, frame) {
+  // Hopping vampire: green face, Qing hat, yellow forehead talisman, stiff arms
+  const bob = frame ? -3 : 0; // hops higher
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.ellipse(16, 28 + (bob ? 1 : 0), 8, 2, 0, 0, Math.PI * 2); ctx.fill();
+  // robe (Qing dynasty dark blue)
+  ctx.fillStyle = "#243a78";
+  ctx.fillRect(10, 18 + bob, 12, 10);
+  ctx.fillStyle = "#3a528a";
+  ctx.fillRect(10, 18 + bob, 12, 1);
+  // sash / sleeves
+  ctx.fillStyle = "#d4a548";
+  ctx.fillRect(10, 22 + bob, 12, 1);
+  // outstretched stiff arms
+  ctx.fillStyle = "#243a78";
+  ctx.fillRect(2, 17 + bob, 8, 3);
+  ctx.fillRect(22, 17 + bob, 8, 3);
+  ctx.fillStyle = "#9bc28a"; // green hands
+  ctx.fillRect(0, 16 + bob, 3, 4);
+  ctx.fillRect(29, 16 + bob, 3, 4);
+  // head — green
+  ctx.fillStyle = "#9bc28a";
+  ctx.beginPath(); ctx.arc(16, 10 + bob, 7, 0, Math.PI * 2); ctx.fill();
+  // qing dynasty hat
+  ctx.fillStyle = "#1a1410";
+  ctx.beginPath(); ctx.ellipse(16, 4 + bob, 8, 2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(13, 1 + bob, 6, 4);
+  ctx.fillStyle = "#d4a548";
+  pixel(ctx, 15, 1 + bob, "#d4a548", 2);
+  // forehead talisman (yellow paper, red sigil)
+  ctx.fillStyle = "#f3e7c9";
+  ctx.fillRect(13, 7 + bob, 6, 4);
+  ctx.fillStyle = "#c43a31";
+  ctx.fillRect(15, 8 + bob, 1, 2);
+  ctx.fillRect(14, 9 + bob, 4, 1);
+  // eyes (dead, white pupils on black)
+  ctx.fillStyle = "#0a0a0a";
+  pixel(ctx, 13, 12 + bob, "#0a0a0a", 2);
+  pixel(ctx, 17, 12 + bob, "#0a0a0a", 2);
+  ctx.fillStyle = "#fff";
+  pixel(ctx, 13, 12 + bob, "#fff");
+  pixel(ctx, 17, 12 + bob, "#fff");
+  // grim mouth
+  ctx.fillStyle = "#3a1410";
+  ctx.fillRect(13, 14 + bob, 6, 1);
+}
+
+function drawBeastHuliJing(ctx, frame) {
+  // Two-tail fox spirit, orange/red with hairpin
+  const bob = frame ? -1 : 0;
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.ellipse(16, 28, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // tails (drawn behind body)
+  ctx.fillStyle = "#e87a40";
+  ctx.beginPath(); ctx.ellipse(8, 19 + bob, 5, 3, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(24, 19 + bob, 5, 3, 0.3, 0, Math.PI * 2); ctx.fill();
+  // tail tips white
+  ctx.fillStyle = "#f8e4c0";
+  ctx.beginPath(); ctx.arc(5, 18 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(27, 18 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  // body
+  ctx.fillStyle = "#e87a40";
+  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
+  // belly white
+  ctx.fillStyle = "#f8e4c0";
+  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 4, 2, 0, 0, Math.PI * 2); ctx.fill();
+  // head
+  ctx.fillStyle = "#e87a40";
+  ctx.beginPath(); ctx.arc(16, 12 + bob, 7, 0, Math.PI * 2); ctx.fill();
+  // muzzle white
+  ctx.fillStyle = "#f8e4c0";
+  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+  // ears
+  ctx.fillStyle = "#e87a40";
+  ctx.beginPath();
+  ctx.moveTo(11, 7 + bob); ctx.lineTo(13, 3 + bob); ctx.lineTo(15, 7 + bob); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(17, 7 + bob); ctx.lineTo(19, 3 + bob); ctx.lineTo(21, 7 + bob); ctx.fill();
+  ctx.fillStyle = "#1a1410";
+  ctx.beginPath();
+  ctx.moveTo(12, 6 + bob); ctx.lineTo(13, 4 + bob); ctx.lineTo(14, 6 + bob); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(18, 6 + bob); ctx.lineTo(19, 4 + bob); ctx.lineTo(20, 6 + bob); ctx.fill();
+  // jade hairpin
+  ctx.fillStyle = "#5fae8a";
+  pixel(ctx, 16, 4 + bob, "#5fae8a", 2);
+  ctx.fillStyle = "#d4a548";
+  pixel(ctx, 17, 3 + bob, "#d4a548");
+  // almond eyes (yellow with red eyeshadow)
+  ctx.fillStyle = "#c43a31";
+  ctx.fillRect(11, 11 + bob, 3, 1);
+  ctx.fillRect(18, 11 + bob, 3, 1);
+  ctx.fillStyle = "#ffd048";
+  pixel(ctx, 12, 12 + bob, "#ffd048", 2);
+  pixel(ctx, 18, 12 + bob, "#ffd048", 2);
+  ctx.fillStyle = "#1a1410";
+  pixel(ctx, 13, 12 + bob, "#1a1410");
+  pixel(ctx, 19, 12 + bob, "#1a1410");
+  // nose
+  ctx.fillStyle = "#1a1410";
+  pixel(ctx, 16, 14 + bob, "#1a1410");
+}
+
+function drawBeastNineTailFox(ctx, frame) {
+  // Boss-tier fox with 5 visible tails fanning out, golden
+  const bob = frame ? -1 : 0;
+  ctx.fillStyle = "rgba(180, 60, 60, 0.2)";
+  ctx.beginPath(); ctx.arc(16, 18 + bob, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(16, 29, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // five tails fanning out from rear (top of sprite, since top-down)
+  const tailColors = ["#ffb84a", "#f8a838", "#ffb84a", "#f8a838", "#ffb84a"];
+  for (let i = 0; i < 5; i++) {
+    const a = (-Math.PI / 2) + (i - 2) * 0.45;
+    const tx = 16 + Math.cos(a) * 11;
+    const ty = 18 + bob + Math.sin(a) * 11;
+    ctx.fillStyle = tailColors[i];
+    ctx.beginPath(); ctx.ellipse(tx, ty, 3, 5, a, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fff8e0";
+    pixel(ctx, Math.round(tx + Math.cos(a) * 3), Math.round(ty + Math.sin(a) * 3), "#fff8e0", 2);
+  }
+  // body
+  ctx.fillStyle = "#f8a838";
+  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ffd884";
+  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 5, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // head
+  ctx.fillStyle = "#f8a838";
+  ctx.beginPath(); ctx.arc(16, 11 + bob, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ffd884";
+  ctx.beginPath(); ctx.ellipse(16, 14 + bob, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+  // ears
+  ctx.fillStyle = "#f8a838";
+  ctx.beginPath();
+  ctx.moveTo(10, 7 + bob); ctx.lineTo(12, 1 + bob); ctx.lineTo(15, 7 + bob); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(17, 7 + bob); ctx.lineTo(20, 1 + bob); ctx.lineTo(22, 7 + bob); ctx.fill();
+  // glowing red eyes
+  ctx.fillStyle = "#1a1410";
+  ctx.fillRect(10, 10 + bob, 4, 2);
+  ctx.fillRect(18, 10 + bob, 4, 2);
+  ctx.fillStyle = "#ff3030";
+  pixel(ctx, 11, 11 + bob, "#ff3030", 2);
+  pixel(ctx, 19, 11 + bob, "#ff3030", 2);
+  ctx.fillStyle = "#fff8a0";
+  pixel(ctx, 12, 11 + bob, "#fff8a0");
+  pixel(ctx, 20, 11 + bob, "#fff8a0");
+  // crown gem on forehead
+  ctx.fillStyle = "#c43a31";
+  ctx.beginPath(); ctx.arc(16, 7 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#fff";
+  pixel(ctx, 15, 6 + bob, "#fff");
+}
+
+function drawBeastQilin(ctx, frame) {
+  // Mythical chimera: scaled body, flame mane, single horn
+  const bob = frame ? -1 : 0;
+  // aura
+  ctx.fillStyle = "rgba(255, 200, 80, 0.18)";
+  ctx.beginPath(); ctx.arc(16, 18 + bob, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath(); ctx.ellipse(16, 29, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // body — green-jade scaled
+  ctx.fillStyle = "#3f8a5a";
+  ctx.beginPath(); ctx.ellipse(16, 22 + bob, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#5fae8a";
+  ctx.beginPath(); ctx.ellipse(16, 24 + bob, 6, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // scale dots
+  ctx.fillStyle = "#2f6b51";
+  pixel(ctx, 11, 21 + bob, "#2f6b51");
+  pixel(ctx, 14, 23 + bob, "#2f6b51");
+  pixel(ctx, 18, 21 + bob, "#2f6b51");
+  pixel(ctx, 21, 23 + bob, "#2f6b51");
+  // hooves
+  ctx.fillStyle = "#1a1410";
+  ctx.fillRect(9, 26 + bob, 3, 3);
+  ctx.fillRect(20, 26 + bob, 3, 3);
+  // flame mane (around neck/head)
+  ctx.fillStyle = "#ff8030";
+  ctx.beginPath(); ctx.arc(16, 14 + bob, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ffd048";
+  ctx.beginPath(); ctx.arc(16, 14 + bob, 5, 0, Math.PI * 2); ctx.fill();
+  // head
+  ctx.fillStyle = "#3f8a5a";
+  ctx.beginPath(); ctx.arc(16, 11 + bob, 5, 0, Math.PI * 2); ctx.fill();
+  // single horn
+  ctx.fillStyle = "#d4a548";
+  ctx.beginPath();
+  ctx.moveTo(15, 7 + bob);
+  ctx.lineTo(16, 1 + bob);
+  ctx.lineTo(17, 7 + bob);
+  ctx.fill();
+  // eyes
+  ctx.fillStyle = "#fff";
+  pixel(ctx, 13, 11 + bob, "#fff", 2);
+  pixel(ctx, 17, 11 + bob, "#fff", 2);
+  ctx.fillStyle = "#1a1410";
+  pixel(ctx, 14, 12 + bob, "#1a1410");
+  pixel(ctx, 18, 12 + bob, "#1a1410");
+  // flame wisps
+  ctx.fillStyle = "rgba(255, 200, 80, 0.7)";
+  ctx.beginPath(); ctx.arc(8, 12 + bob, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(24, 12 + bob, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawBeastDragon(ctx, frame) {
+  // Young dragon: serpentine, gold/red, whiskers
+  const bob = frame ? -1 : 0;
+  // aura
+  ctx.fillStyle = "rgba(255, 60, 60, 0.2)";
+  ctx.beginPath(); ctx.arc(16, 16 + bob, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.beginPath(); ctx.ellipse(16, 30, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // long coiled body (drawn as overlapping scales going from rear to front)
+  ctx.fillStyle = "#a82828";
+  ctx.beginPath();
+  ctx.moveTo(2, 26 + bob);
+  ctx.quadraticCurveTo(6, 18 + bob, 12, 22 + bob);
+  ctx.quadraticCurveTo(20, 26 + bob, 26, 16 + bob);
+  ctx.quadraticCurveTo(28, 12 + bob, 24, 8 + bob);
+  ctx.quadraticCurveTo(22, 16 + bob, 16, 18 + bob);
+  ctx.quadraticCurveTo(8, 20 + bob, 2, 30 + bob);
+  ctx.closePath();
+  ctx.fill();
+  // gold scales highlights
+  ctx.fillStyle = "#d4a548";
+  pixel(ctx, 6, 22 + bob, "#d4a548", 2);
+  pixel(ctx, 12, 20 + bob, "#d4a548", 2);
+  pixel(ctx, 18, 17 + bob, "#d4a548", 2);
+  pixel(ctx, 22, 13 + bob, "#d4a548", 2);
+  // mane along spine
+  ctx.fillStyle = "#ffd048";
+  ctx.fillRect(8, 17 + bob, 1, 3);
+  ctx.fillRect(14, 14 + bob, 1, 3);
+  ctx.fillRect(20, 11 + bob, 1, 3);
+  // claws
+  ctx.fillStyle = "#1a1410";
+  pixel(ctx, 9, 25 + bob, "#1a1410");
+  pixel(ctx, 11, 25 + bob, "#1a1410");
+  pixel(ctx, 17, 21 + bob, "#1a1410");
+  pixel(ctx, 19, 21 + bob, "#1a1410");
+  // head (front)
+  ctx.fillStyle = "#a82828";
+  ctx.beginPath(); ctx.ellipse(24, 8 + bob, 6, 5, -0.3, 0, Math.PI * 2); ctx.fill();
+  // gold horns
+  ctx.fillStyle = "#d4a548";
+  ctx.beginPath();
+  ctx.moveTo(22, 4 + bob); ctx.lineTo(20, 0 + bob); ctx.lineTo(24, 3 + bob); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(26, 4 + bob); ctx.lineTo(28, 0 + bob); ctx.lineTo(28, 5 + bob); ctx.fill();
+  // glowing eye
+  ctx.fillStyle = "#ffd048";
+  pixel(ctx, 24, 8 + bob, "#ffd048", 2);
+  ctx.fillStyle = "#1a1410";
+  pixel(ctx, 25, 8 + bob, "#1a1410");
+  // whiskers (long)
+  ctx.strokeStyle = "#ffd048";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(28, 9 + bob); ctx.quadraticCurveTo(31, 12 + bob, 30, 16 + bob);
+  ctx.moveTo(28, 11 + bob); ctx.quadraticCurveTo(32, 14 + bob, 31, 18 + bob);
+  ctx.stroke();
+  // little flames at mouth
+  ctx.fillStyle = "rgba(255, 100, 30, 0.9)";
+  ctx.beginPath(); ctx.arc(30, 6 + bob, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(255, 200, 80, 0.9)";
+  pixel(ctx, 31, 5 + bob, "rgba(255, 220, 100, 0.9)");
+}
+
 function drawMerchant(ctx) {
   drawChibi(ctx, {
     robe: "#7a4a18",
@@ -645,6 +950,18 @@ function buildSprites() {
     beast_boar_1: (cx) => drawBeastBoar(cx, 1),
     beast_wolf_0: (cx) => drawBeastWolf(cx, 0),
     beast_wolf_1: (cx) => drawBeastWolf(cx, 1),
+    beast_gui_0: (cx) => drawBeastGui(cx, 0),
+    beast_gui_1: (cx) => drawBeastGui(cx, 1),
+    beast_jiangshi_0: (cx) => drawBeastJiangshi(cx, 0),
+    beast_jiangshi_1: (cx) => drawBeastJiangshi(cx, 1),
+    beast_huli_jing_0: (cx) => drawBeastHuliJing(cx, 0),
+    beast_huli_jing_1: (cx) => drawBeastHuliJing(cx, 1),
+    beast_nine_tail_fox_0: (cx) => drawBeastNineTailFox(cx, 0),
+    beast_nine_tail_fox_1: (cx) => drawBeastNineTailFox(cx, 1),
+    beast_qilin_0: (cx) => drawBeastQilin(cx, 0),
+    beast_qilin_1: (cx) => drawBeastQilin(cx, 1),
+    beast_young_dragon_0: (cx) => drawBeastDragon(cx, 0),
+    beast_young_dragon_1: (cx) => drawBeastDragon(cx, 1),
     merchant: drawMerchant,
   };
   for (const name in entities) {

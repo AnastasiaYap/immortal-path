@@ -382,6 +382,17 @@ function openHelp() {
 </ol>
 <h3>Realms</h3>
 <p>Mortal → Body Refinement → Qi Gathering → Foundation Establishment → Core Formation → Nascent Soul.</p>
+<h3>Beasts of the Mountain</h3>
+<p>Each day the wild grows hungrier. New foes appear as your dao deepens:</p>
+<ul>
+  <li><b>Spirit Rabbit</b>, <b>Iron Tusk Boar</b> — early game.</li>
+  <li><b>Hungry Ghost</b> (gui) — drains your qi on contact.</li>
+  <li><b>Frost Spirit Wolf</b> — fast, hunts in daylight.</li>
+  <li><b>Jiangshi</b> — hopping vampire, slow but armored.</li>
+  <li><b>Two-tail Fox Spirit</b> (huli jing) — quick and bewitching. Weak to <b>Purification Talismans</b>.</li>
+  <li><b>Nine-tail Fox</b>, <b>Qilin</b>, <b>Young Dragon</b> — boss-tier. Their drops feed the highest pills.</li>
+</ul>
+<p>All beasts grow stronger every day — even the rabbits.</p>
 `;
   openModal("Walking the Immortal Path", html);
 }

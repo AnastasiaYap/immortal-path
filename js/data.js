@@ -12,19 +12,28 @@ const ITEMS = {
   beast_hide:     { name: "Beast Hide",     desc: "Tough hide from a low spirit beast.",       value: 12 },
   beast_core:     { name: "Beast Core",     desc: "Crystallized qi from a slain beast.",       value: 35 },
   wolf_fang:      { name: "Wolf Fang",      desc: "Fang of a spirit wolf. Sharp and cold.",    value: 28 },
+  ghost_essence:  { name: "Ghost Essence",  desc: "Pale yin energy condensed from a gui.",     value: 45 },
+  jade_seal:      { name: "Jade Corpse Seal", desc: "Talisman from a slain jiangshi's brow.",  value: 70 },
+  fox_pearl:      { name: "Fox Pearl",      desc: "A bewitching inner pearl. Aids the mind.",  value: 110 },
+  nine_tail_fur:  { name: "Nine-tail Pelt", desc: "Pelt of a nine-tailed fox.",                value: 280 },
+  qilin_horn:     { name: "Qilin Horn",     desc: "Auspicious horn of a qilin.",               value: 420 },
+  dragon_scale:   { name: "Dragon Scale",   desc: "A young dragon's scale, hot to the touch.", value: 700 },
 
   // Materials
   talisman_paper: { name: "Talisman Paper", desc: "Yellow paper for inscribing.",              value: 6 },
   cinnabar_ink:   { name: "Cinnabar Ink",   desc: "Vermilion ink, channels qi.",               value: 10 },
 
   // Crafted talismans
-  fire_talisman:  { name: "Fire Talisman",  desc: "Throw to burn a beast.",                    value: 25, throwable: true, dmg: 18 },
-  ward_talisman:  { name: "Ward Talisman",  desc: "Briefly slows incoming beasts.",            value: 30, useable: "ward" },
+  fire_talisman:    { name: "Fire Talisman",    desc: "Throw to burn a beast.",                    value: 25, throwable: true, dmg: 18 },
+  ward_talisman:    { name: "Ward Talisman",    desc: "Briefly slows incoming beasts.",            value: 30, useable: "ward" },
+  purify_talisman:  { name: "Purification Talisman", desc: "Hurls bright yang fire — extra vs. ghosts and fox-spirits.", value: 70, throwable: true, dmg: 45 },
 
   // Crafted pills
-  qi_pill:        { name: "Qi Recovery Pill",  desc: "Restores 40 Qi.",                        value: 60, qiRestore: 40 },
-  body_pill:      { name: "Body Refining Pill", desc: "Heals 30 HP, +1 max HP next dawn.",     value: 80, hpRestore: 30, bodyBoost: 1 },
-  foundation_pill:{ name: "Foundation Pill",   desc: "Bonus to next breakthrough attempt.",    value: 220, breakthroughBoost: 0.25 },
+  qi_pill:          { name: "Qi Recovery Pill",   desc: "Restores 40 Qi.",                        value: 60, qiRestore: 40 },
+  body_pill:        { name: "Body Refining Pill", desc: "Heals 30 HP, +1 max HP next dawn.",      value: 80, hpRestore: 30, bodyBoost: 1 },
+  foundation_pill:  { name: "Foundation Pill",    desc: "Bonus to next breakthrough attempt.",    value: 220, breakthroughBoost: 0.25 },
+  mind_clarity_pill:{ name: "Mind Clarity Pill",  desc: "Clears the dao-mind. Big breakthrough boost.", value: 360, breakthroughBoost: 0.5, qiRestore: 60 },
+  dragon_blood_pill:{ name: "Dragon Blood Pill",  desc: "Dragon blood and qilin horn refined together. +20 max HP, full heal.", value: 1200, hpRestore: 9999, bodyBoost: 20 },
 
   // Tools
   hoe_wood:       { name: "Wooden Hoe",     desc: "Basic. Tills 1 plot at a time.",            value: 0 },
@@ -67,6 +76,21 @@ const RECIPES = {
     inputs: { qi_lotus: 1, beast_core: 1, spirit_herb: 3 }, qiCost: 40,
     label: "Foundation Pill", unlockRealm: 2,
   },
+  purify_talisman: {
+    output: "purify_talisman", qty: 2, station: "desk",
+    inputs: { talisman_paper: 3, cinnabar_ink: 2, ghost_essence: 1 }, qiCost: 25,
+    label: "Purification Talisman ×2", unlockRealm: 2,
+  },
+  mind_clarity_pill: {
+    output: "mind_clarity_pill", qty: 1, station: "furnace",
+    inputs: { fox_pearl: 1, qi_lotus: 2, spirit_herb: 4 }, qiCost: 60,
+    label: "Mind Clarity Pill", unlockRealm: 3,
+  },
+  dragon_blood_pill: {
+    output: "dragon_blood_pill", qty: 1, station: "furnace",
+    inputs: { dragon_scale: 1, qilin_horn: 1, qi_lotus: 4, beast_core: 3 }, qiCost: 200,
+    label: "Dragon Blood Pill", unlockRealm: 4,
+  },
 };
 
 // Cultivation realms — classic xianxia ladder (compressed).
@@ -79,29 +103,99 @@ const REALMS = [
   { name: "Nascent Soul",          stages: 0, qiToBreakthrough: Infinity, hpMax: 500, qiMax: 500, atk: 50, def: 18 },
 ];
 
-// Beast definitions
+// Beast definitions. tier roughly maps to player realm; minDay is an
+// alternate gate so progression keeps escalating even if the player lingers.
+// weight is the spawn weight when both gates are passed.
 const BEASTS = {
   rabbit: {
     name: "Spirit Rabbit", spriteKey: "beast_rabbit",
-    hp: 18, dmg: 4, speed: 1.4, xp: 8, drops: [{ id: "beast_hide", chance: 0.55 }],
-    minRealm: 0,
+    hp: 18, dmg: 4, speed: 1.4, xp: 8,
+    drops: [{ id: "beast_hide", chance: 0.55 }],
+    tier: 1, minRealm: 0, minDay: 1, weight: 5,
   },
   boar: {
     name: "Iron Tusk Boar", spriteKey: "beast_boar",
-    hp: 50, dmg: 12, speed: 1.0, xp: 22, drops: [
+    hp: 50, dmg: 12, speed: 1.0, xp: 22,
+    drops: [
       { id: "beast_hide", chance: 0.85 },
       { id: "beast_core", chance: 0.35 },
     ],
-    minRealm: 1,
+    tier: 2, minRealm: 1, minDay: 3, weight: 4,
+  },
+  gui: {
+    name: "Hungry Ghost", spriteKey: "beast_gui",
+    hp: 35, dmg: 9, speed: 1.3, xp: 28,
+    drops: [
+      { id: "ghost_essence", chance: 0.55 },
+      { id: "beast_core", chance: 0.2 },
+    ],
+    drainsQi: 4,
+    tier: 2, minRealm: 1, minDay: 6, weight: 3,
   },
   wolf: {
     name: "Frost Spirit Wolf", spriteKey: "beast_wolf",
-    hp: 90, dmg: 22, speed: 1.7, xp: 55, drops: [
+    hp: 90, dmg: 22, speed: 1.7, xp: 55,
+    drops: [
       { id: "beast_hide", chance: 0.7 },
       { id: "wolf_fang", chance: 0.6 },
       { id: "beast_core", chance: 0.7 },
     ],
-    minRealm: 2,
+    tier: 3, minRealm: 2, minDay: 10, weight: 4,
+  },
+  jiangshi: {
+    name: "Jiangshi", spriteKey: "beast_jiangshi",
+    hp: 160, dmg: 28, speed: 0.8, xp: 90,
+    drops: [
+      { id: "jade_seal", chance: 0.65 },
+      { id: "beast_core", chance: 0.85 },
+      { id: "talisman_paper", chance: 0.5 },
+    ],
+    tier: 3, minRealm: 2, minDay: 14, weight: 3,
+  },
+  huli_jing: {
+    name: "Two-tail Fox Spirit", spriteKey: "beast_huli_jing",
+    hp: 130, dmg: 24, speed: 2.0, xp: 110,
+    drops: [
+      { id: "fox_pearl", chance: 0.55 },
+      { id: "beast_core", chance: 0.85 },
+      { id: "spirit_herb", chance: 0.7 },
+    ],
+    weak: "purify_talisman",
+    tier: 4, minRealm: 3, minDay: 20, weight: 3,
+  },
+  nine_tail_fox: {
+    name: "Nine-tail Fox", spriteKey: "beast_nine_tail_fox",
+    hp: 380, dmg: 48, speed: 2.0, xp: 320,
+    drops: [
+      { id: "nine_tail_fur", chance: 0.9 },
+      { id: "fox_pearl", chance: 1.0 },
+      { id: "beast_core", chance: 1.0 },
+    ],
+    weak: "purify_talisman",
+    boss: true,
+    tier: 5, minRealm: 4, minDay: 35, weight: 0.6,
+  },
+  qilin: {
+    name: "Qilin", spriteKey: "beast_qilin",
+    hp: 460, dmg: 42, speed: 1.4, xp: 360,
+    drops: [
+      { id: "qilin_horn", chance: 0.85 },
+      { id: "beast_core", chance: 1.0 },
+      { id: "spirit_herb", chance: 1.0 },
+    ],
+    boss: true,
+    tier: 5, minRealm: 4, minDay: 30, weight: 0.5,
+  },
+  young_dragon: {
+    name: "Young Dragon", spriteKey: "beast_young_dragon",
+    hp: 800, dmg: 70, speed: 1.6, xp: 700,
+    drops: [
+      { id: "dragon_scale", chance: 1.0 },
+      { id: "beast_core", chance: 1.0 },
+      { id: "qilin_horn", chance: 0.2 },
+    ],
+    boss: true,
+    tier: 6, minRealm: 5, minDay: 50, weight: 0.3,
   },
 };
 

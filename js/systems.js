@@ -68,9 +68,14 @@ function aiBeast(b, player, dt) {
     } else {
       b.vx = 0; b.vy = 0;
       if (b.attackCooldown <= 0 && player.wardTimer <= 0) {
-        const dmg = Math.max(1, b.def.dmg - (REALMS[player.realmIndex].def || 0));
+        const baseDmg = b.dmg ?? b.def.dmg;
+        const dmg = Math.max(1, baseDmg - (REALMS[player.realmIndex].def || 0));
         player.hp = Math.max(0, player.hp - dmg);
-        b.attackCooldown = 0.9;
+        // ghosts drain qi with each strike
+        if (b.drainsQi > 0) {
+          player.qi = Math.max(0, player.qi - b.drainsQi);
+        }
+        b.attackCooldown = b.boss ? 0.7 : 0.9;
         return { hitPlayer: dmg };
       }
     }
@@ -94,38 +99,86 @@ function aiBeast(b, player, dt) {
 }
 
 // --- BEAST SPAWNING ---
+
+// Day-based scalar: gentle linear creep so even old foes stay relevant.
+function dayScale(day) {
+  return 1 + Math.max(0, day - 1) * 0.015; // ~1.7x by day 50
+}
+
+// Effective player tier — combines realm and elapsed days so a player who
+// lingers in low realms still sees escalation.
+function effectiveTier(player, day) {
+  return player.realmIndex + 1 + day / 18;
+}
+
+// Build the spawn pool with weights. A beast must satisfy BOTH minRealm and
+// minDay to spawn at all; once it's eligible, its weight scales with how
+// close its tier is to the player's effective tier (so old beasts thin out
+// and new beasts fill in as you progress).
+function buildSpawnPool(player, day, night) {
+  const pool = [];
+  const eff = effectiveTier(player, day);
+  for (const id in BEASTS) {
+    const b = BEASTS[id];
+    if (player.realmIndex < (b.minRealm ?? 0)) continue;
+    if (day < (b.minDay ?? 0)) continue;
+    let w = b.weight ?? 1;
+    // proximity to effective tier — bell-ish
+    const gap = Math.abs((b.tier ?? 1) - eff);
+    if (gap < 0.8) w *= 1.4;
+    else if (gap < 1.6) w *= 1.0;
+    else if (gap < 2.5) w *= 0.45;
+    else w *= 0.15; // way under-tier — rare nostalgic appearance
+    // bosses are uncommon, slightly less so at night
+    if (b.boss) w *= night ? 0.7 : 0.45;
+    // night raises higher-tier beasts
+    if (night && (b.tier ?? 1) >= 2) w *= 1.5;
+    if (w > 0) pool.push({ id, w });
+  }
+  return pool;
+}
+
+function pickWeighted(pool) {
+  let total = 0;
+  for (const e of pool) total += e.w;
+  let r = Math.random() * total;
+  for (const e of pool) { r -= e.w; if (r <= 0) return e.id; }
+  return pool[pool.length - 1]?.id;
+}
+
 function maybeSpawnBeast(state, dt) {
   state.spawnTimer -= dt;
   if (state.spawnTimer > 0) return;
-  state.spawnTimer = isNight(state.time) ? 6 : 14;
+  const night = isNight(state.time);
+  // higher-tier players get more spawns — keeps the pressure on
+  const tier = effectiveTier(state.player, state.day);
+  state.spawnTimer = (night ? 5 : 12) / Math.max(1, tier * 0.5);
 
-  if (state.beasts.length >= 6) return;
+  const cap = 5 + Math.floor(tier);
+  if (state.beasts.length >= cap) return;
 
-  // pick beast type by realm
-  const rolls = [];
-  if (state.player.realmIndex >= 0) rolls.push("rabbit", "rabbit");
-  if (state.player.realmIndex >= 1) rolls.push("boar");
-  if (state.player.realmIndex >= 2) rolls.push("wolf");
-  // night escalates
-  if (isNight(state.time)) rolls.push("boar", "wolf");
-
-  const type = rolls[Math.floor(Math.random() * rolls.length)];
-  if (BEASTS[type].minRealm > state.player.realmIndex + (isNight(state.time) ? 1 : 0)) return;
+  const pool = buildSpawnPool(state.player, state.day, night);
+  if (!pool.length) return;
+  const type = pickWeighted(pool);
+  if (!type) return;
 
   // spawn at the forest edge or far from player
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 16; i++) {
     const tx = Math.floor(Math.random() * MAP_W);
-    const ty = Math.floor(Math.random() * 14); // forest
+    const ty = Math.floor(Math.random() * 14); // forest band
     const t = state.world.tiles[ty][tx];
-    if (t === T_GRASS || t === T_HERB) {
-      const wx = tx * TILE + 16;
-      const wy = ty * TILE + 16;
-      const dx = wx - state.player.x;
-      const dy = wy - state.player.y;
-      if (Math.hypot(dx, dy) < 250) continue;
-      state.beasts.push(makeBeast(type, wx, wy));
-      return;
+    if (t !== T_GRASS && t !== T_HERB) continue;
+    const wx = tx * TILE + 16;
+    const wy = ty * TILE + 16;
+    const dx = wx - state.player.x;
+    const dy = wy - state.player.y;
+    if (Math.hypot(dx, dy) < 240) continue;
+    const beast = makeBeast(type, wx, wy, dayScale(state.day));
+    state.beasts.push(beast);
+    if (BEASTS[type].boss) {
+      pushLog(state, `A ${BEASTS[type].name} stalks the mountain!`, "bad");
     }
+    return;
   }
 }
 
@@ -170,10 +223,13 @@ function playerAttack(state) {
 
 function throwTalisman(state) {
   const p = state.player;
-  if ((p.inventory.fire_talisman || 0) <= 0) {
-    return { msg: "No fire talismans.", kind: "bad" };
-  }
-  p.inventory.fire_talisman--;
+  // Prefer purify talismans if available — they are stronger.
+  let kind = null;
+  if ((p.inventory.purify_talisman || 0) > 0) kind = "purify_talisman";
+  else if ((p.inventory.fire_talisman || 0) > 0) kind = "fire_talisman";
+  if (!kind) return { msg: "No talismans to throw.", kind: "bad" };
+  p.inventory[kind]--;
+  if (p.inventory[kind] <= 0) delete p.inventory[kind];
   let vx = 0, vy = 0;
   switch (p.facing) {
     case "down": vy = 280; break;
@@ -181,8 +237,10 @@ function throwTalisman(state) {
     case "left": vx = -280; break;
     case "right":vx = 280; break;
   }
-  state.projectiles.push(makeProjectile(p.x, p.y - 8, vx, vy, ITEMS.fire_talisman.dmg + p.realmIndex * 4));
-  return { msg: "You hurl a fire talisman!", kind: "qi" };
+  const baseDmg = ITEMS[kind].dmg + p.realmIndex * 4;
+  state.projectiles.push(makeProjectile(p.x, p.y - 8, vx, vy, baseDmg, kind));
+  const label = kind === "purify_talisman" ? "purification talisman" : "fire talisman";
+  return { msg: `You hurl a ${label}!`, kind: "qi" };
 }
 
 function tickProjectiles(state, dt) {
@@ -193,10 +251,12 @@ function tickProjectiles(state, dt) {
     if (isSolidAt(state.world, p.x, p.y)) p.life = 0;
     for (const b of state.beasts) {
       if (Math.hypot(p.x - b.x, p.y - b.y) < 18) {
-        b.hp -= p.dmg;
+        let dmg = p.dmg;
+        if (b.weak && b.weak === p.kind) dmg = Math.round(dmg * 2);
+        b.hp -= dmg;
         b.hitFlash = 0.15;
         const fx = makeFx(b.x, b.y - 12, "damage");
-        fx.amount = p.dmg;
+        fx.amount = dmg;
         fx.life = 0.6;
         state.fx.push(fx);
         state.fx.push(makeFx(b.x, b.y - 6, "hit"));
@@ -221,14 +281,19 @@ function killBeast(state, b) {
       state.fx.push(fx);
     }
   }
-  // cultivation xp
-  state.player.cultProgress += b.def.xp;
+  // cultivation xp scales with this spawn's day-scalar
+  const xp = b.xpReward ?? b.def.xp;
+  state.player.cultProgress += xp;
   const fx = makeFx(b.x, b.y - 16, "text");
-  fx.text = `+${b.def.xp} cultivation`;
+  fx.text = `+${xp} cultivation`;
   fx.color = "120, 200, 255";
   fx.life = 1.4;
   fx.lifeMax = 1.4;
   state.fx.push(fx);
+  if (b.boss) {
+    pushLog(state, `You slew a ${b.def.name}! Your name will be remembered.`, "qi");
+    state.player.money += 50; // boss bounty bonus
+  }
 }
 
 // --- INVENTORY ---

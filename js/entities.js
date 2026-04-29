@@ -35,23 +35,31 @@ function makePlayer(spawn) {
   };
 }
 
-function makeBeast(type, x, y) {
+function makeBeast(type, x, y, scale = 1) {
   const def = BEASTS[type];
+  const hp = Math.round(def.hp * scale);
+  const dmg = Math.round(def.dmg * scale);
   return {
     type,
     def,
     x, y,
     vx: 0, vy: 0,
-    hp: def.hp,
-    hpMax: def.hp,
+    hp,
+    hpMax: hp,
+    dmg,                // scaled per-spawn damage (overrides def.dmg)
+    xpReward: Math.round(def.xp * scale),
+    drainsQi: def.drainsQi || 0,
+    weak: def.weak || null,
+    boss: !!def.boss,
     speed: def.speed * 50,
-    state: "idle", // idle | chase | attack
-    aggroRange: 130,
+    state: "idle",
+    aggroRange: def.boss ? 200 : 130,
     attackRange: 22,
     attackCooldown: 0,
     animFrame: 0,
     animTimer: 0,
     hitFlash: 0,
+    scale,
   };
 }
 

@@ -42,8 +42,11 @@ Any modern browser works.
 2. **Sell** — head east to the merchant. Sell produce, buy seeds, paper, ink,
    meals.
 3. **Forage** — glowing spirit herbs in the forest are pill ingredients.
-4. **Hunt** — slay spirit rabbits, iron-tusk boars, frost wolves. Drops:
-   hides, fangs, beast cores. Beware nights — stronger beasts roam.
+4. **Hunt** — slay spirit rabbits and iron-tusk boars first; later, hungry
+   ghosts, jiangshi (hopping vampires), fox spirits, and finally boss-tier
+   nine-tail foxes, qilin, and young dragons descend the mountain. **Every
+   beast scales with the day** — rabbits on day 50 are not the same rabbits
+   you fought on day 1. Bosses drop materials for the highest pills.
 5. **Cultivate** — sit on the meditation mat (M). Qi rises, cultivation
    accumulates. When cultivation hits the realm threshold, press R to attempt
    a **breakthrough** into the next realm.
@@ -59,6 +62,25 @@ Core Formation → Nascent Soul.
 
 Each realm raises HP, Qi, attack, and defense — and unlocks new seeds, beast
 spawns, and recipes.
+
+## Bestiary
+
+Beasts gate on **realm tier** AND **day count** — even if you linger in a low
+realm, the wild keeps escalating around you, and a tier-weighted spawn pool
+phases out the cute foes as new horrors arrive.
+
+| Tier | Beast | Notes |
+| --- | --- | --- |
+| 1 | Spirit Rabbit | Day 1+. Easy XP, drops hides. |
+| 2 | Iron Tusk Boar | Day 3+. Tanky, drops cores. |
+| 2 | **Hungry Ghost** (gui) | Day 6+. Drains your qi on hit. Drops ghost essence. |
+| 3 | Frost Spirit Wolf | Day 10+. Fast, hunts in daylight. |
+| 3 | **Jiangshi** | Day 14+. Hopping vampire, slow but armored. Drops jade corpse seal. |
+| 4 | **Two-tail Fox Spirit** (huli jing) | Day 20+. Fast and bewitching. Weak to **Purification Talismans** (2× damage). Drops fox pearl. |
+| 5 | **Nine-tail Fox** *(boss)* | Day 35+. Aura, glowing eyes, fans of fire-tipped tails. |
+| 5 | **Qilin** *(boss)* | Day 30+. Jade-scaled, golden-maned, single-horned. |
+| 6 | **Young Dragon** *(boss)* | Day 50+. Coiled, scaled, breathing flame. |
+
 
 ## Save System
 
