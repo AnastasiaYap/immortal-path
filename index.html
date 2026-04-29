@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Immortal Path — A Xianxia Life Sim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="game-root">
+    <canvas id="game" width="960" height="600"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="bar-group">
+        <div class="bar"><div class="bar-fill hp" id="bar-hp"></div><span class="bar-label">HP</span></div>
+        <div class="bar"><div class="bar-fill qi" id="bar-qi"></div><span class="bar-label">Qi</span></div>
+        <div class="bar"><div class="bar-fill stamina" id="bar-stamina"></div><span class="bar-label">Stamina</span></div>
+        <div class="bar"><div class="bar-fill hunger" id="bar-hunger"></div><span class="bar-label">Hunger</span></div>
+      </div>
+      <div class="info-block">
+        <div id="realm-line">Realm: <b id="realm-name">Mortal</b> <span id="realm-stage"></span></div>
+        <div id="cult-progress-line">Cultivation: <span id="cult-progress">0 / 100</span></div>
+        <div id="day-line">Day <span id="day-num">1</span> · <span id="time-of-day">Morning</span></div>
+        <div id="money-line">Spirit Stones: <b id="money">0</b></div>
+      </div>
+    </div>
+
+    <!-- Hotbar / quick action hints -->
+    <div id="hotbar">
+      <div class="slot" data-key="WASD">Move</div>
+      <div class="slot" data-key="E">Interact</div>
+      <div class="slot" data-key="F">Attack / Throw</div>
+      <div class="slot" data-key="M">Meditate</div>
+      <div class="slot" data-key="I">Inventory</div>
+      <div class="slot" data-key="C">Craft</div>
+      <div class="slot" data-key="B">Build</div>
+      <div class="slot" data-key="Tab">Map / Help</div>
+    </div>
+
+    <!-- Toast / message log -->
+    <div id="log"></div>
+
+    <!-- Modal panels -->
+    <div id="modal" class="hidden">
+      <div id="modal-card">
+        <div id="modal-title">Title</div>
+        <div id="modal-body"></div>
+        <div id="modal-actions"></div>
+        <button id="modal-close">Close (Esc)</button>
+      </div>
+    </div>
+
+    <!-- Title / start screen -->
+    <div id="title-screen">
+      <h1>Immortal Path</h1>
+      <p class="sub">A Xianxia Life Sim — farm, work, cultivate, ascend.</p>
+      <div class="title-buttons">
+        <button id="btn-new">New Life</button>
+        <button id="btn-load">Continue</button>
+        <button id="btn-help">How to Play</button>
+      </div>
+      <div class="title-tip">
+        <p>Move with <b>WASD</b>. Interact with <b>E</b>. Attack with <b>F</b>.</p>
+        <p>Meditate (<b>M</b>) at the meditation mat to gather Qi and break through realms.</p>
+        <p>Tend your farm, hunt low beasts, craft pills &amp; talismans, and walk the immortal path.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sprites.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/systems.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
