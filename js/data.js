@@ -311,11 +311,12 @@ const SHOP_BUY = [
   { id: "linen_bolt",        label: "Linen Bolt — silk ×3", price: 75,  give: { spirit_silk: 3 } },
 ];
 
-// House upgrade tiers
+// House upgrade tiers — four pagoda silhouettes per the design deck.
 const HOUSE_TIERS = [
-  { tier: 0, name: "Mud-walled Hut",  cost: 0,    qiRegenBonus: 0,   sleepHeal: 0.6, },
-  { tier: 1, name: "Timber House",    cost: 300,  qiRegenBonus: 0.3, sleepHeal: 0.85 },
-  { tier: 2, name: "Spirit Courtyard", cost: 1500, qiRegenBonus: 0.7, sleepHeal: 1.0, hpBonus: 30 },
+  { tier: 0, name: "Bamboo Hut",         cost: 0,    qiRegenBonus: 0,   sleepHeal: 0.6,  desc: "Bamboo walls, single jade-tile roof. Modest but yours." },
+  { tier: 1, name: "Cultivator Cottage", cost: 300,  qiRegenBonus: 0.3, sleepHeal: 0.85, desc: "Wood walls, paper windows, sect banner over the door." },
+  { tier: 2, name: "Courtyard House",    cost: 1500, qiRegenBonus: 0.7, sleepHeal: 1.0,  hpBonus: 30, desc: "Two-tier pagoda, hanging lanterns, sakura at the eaves." },
+  { tier: 3, name: "Immortal Estate",    cost: 5000, qiRegenBonus: 1.2, sleepHeal: 1.0,  hpBonus: 80, desc: "Three-tier pagoda, four lanterns, carved stone steps. A home worthy of an immortal." },
 ];
 
 // Building / structure unlocks

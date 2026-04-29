@@ -574,7 +574,7 @@
       let baseY = (s.ty + s.h) * TILE;
       let key, sw = TILE, sh = TILE, ax, ay;
       switch (s.type) {
-        case "house": key = s.tier > 0 ? "struct_house_upgraded" : "struct_house"; sw = 96; sh = 96; ax = (s.tx + s.w / 2) * TILE - sw / 2; ay = baseY - sh; break;
+        case "house": key = `struct_house_tier_${Math.min(3, s.tier || 0)}`; sw = 96; sh = 96; ax = (s.tx + s.w / 2) * TILE - sw / 2; ay = baseY - sh; break;
         case "mat":     key = "struct_mat";     ax = s.tx * TILE; ay = s.ty * TILE; break;
         case "well":    key = "struct_well";    ax = s.tx * TILE; ay = s.ty * TILE; break;
         case "desk":    key = "struct_desk";    ax = s.tx * TILE; ay = s.ty * TILE; break;

@@ -1011,6 +1011,54 @@ const MERCHANT = [
 // ===========================================================================
 // COMPANION PARTNER (chibi in peach-blossom hanfu)
 // ===========================================================================
+// Cute fox companion — orange/white chibi fox with fluffy tail and sparkle.
+const FOX_PAL = {
+  o: "#2a221b",
+  O: "#e07a30",
+  M: "#bd5a18",
+  W: "#fde4ea",       // pink-tinged white belly
+  w: "#f4b6c2",       // pink cheek
+  E: "#1a1410",
+  Y: "#fff8a0",       // sparkle
+  d: "rgba(36,28,20,0.32)",
+};
+const FOX_0 = [
+  "................",
+  "................",
+  "....oo....oo....",
+  "...oOMo..oOMo...",
+  "...oOWooooOWo...",
+  "...oOOOOOOOOOoY.",   // ears done, sparkle Y to the right
+  "..oOOWWWWWWOOoO.",
+  "..oOOWEooEWOOoO.",   // eyes
+  "..oOWwoowwwOOOO.",   // muzzle/cheek
+  "..oOOWoooWOOOOM.",   // tail extends right
+  "..oOOOOOOOOOMOO.",
+  "..oOWWWWWWWWOMO.",   // belly
+  "..oOWooooooWOOM.",
+  "...oOoO..OoOoOo.",
+  "................",
+  "....dddddddd....",
+];
+const FOX_1 = [
+  "................",
+  "....oo....oo....",
+  "...oOMo..oOMo...",
+  "...oOWooooOWo...",
+  "...oOOOOOOOOOoY.",
+  "..oOOWWWWWWOOoO.",
+  "..oOOWEooEWOOoO.",
+  "..oOWwoowwwOOOO.",
+  "..oOOWoooWOOOOM.",
+  "..oOOOOOOOOOMOO.",
+  "..oOWWWWWWWWOMO.",
+  "..oOWooooooWOOM.",
+  "...oOoO..OoOoOo.",
+  "................",
+  "................",
+  "....dddddddd....",
+];
+
 const PARTNER_PAL = {
   o: "#2a221b",
   H: "#1a120c",
@@ -1076,8 +1124,8 @@ function buildStruct(logicalW, logicalH, drawer) {
   return c;
 }
 
-// House — pagoda with upturned jade-tile roof. 48x48 logical = 96x96 actual.
-const HOUSE_PAL = {
+// (HOUSE_PAL removed — replaced by procedural drawHousePagoda below.)
+const _HOUSE_DEAD_PAL = {
   o: "#2a221b",
   J: "#5e9070",      // jade tile mid
   j: "#3a6b51",      // jade tile shadow
@@ -1150,17 +1198,177 @@ const HOUSE_UPGRADED = HOUSE.map((row, y) => {
   return row;
 });
 
-function patchUpgradedHouse(ctx) {
-  // hang two pink lanterns at the eaves
-  pxRect(ctx, 4, 11, 1, 5, "#3a2010");
-  pxRect(ctx, 3, 16, 3, 3, "#f4b6c2");
-  pxRect(ctx, 4, 19, 1, 1, "#d4a548");
-  pxRect(ctx, 43, 11, 1, 5, "#3a2010");
-  pxRect(ctx, 42, 16, 3, 3, "#f4b6c2");
-  pxRect(ctx, 43, 19, 1, 1, "#d4a548");
-  // jade roof crest highlight
-  for (let x = 12; x < 36; x += 2) {
-    px(ctx, x, 11, "#a8d6b0");
+// Procedural pagoda house — 4 silhouette tiers per the design deck.
+// Canvas is 96x96 actual (48x48 logical).
+const HOUSE_C = {
+  o: "#2a221b",
+  J: "#5e9070", j: "#3a6b51", L: "#a8d6b0",   // jade tiles
+  W: "#a87a48", w: "#7e5837", X: "#d4a675",   // wood
+  Wd: "#5a3a1a",
+  D: "#3a2010", P: "#fbf6e8", B: "#7d9ab2",
+  Y: "#d4a548", Yd: "#a87b1f",
+  R: "#c43a31", Rd: "#7a1f1a",
+  S: "#9a948c", Sd: "#5a544c",
+  Lt: "#fde4ea", Ls: "#f4b6c2", Ld: "#e08aa0",
+  Sk: "#f4b6c2", Skd: "#e08aa0",
+  Bm: "#8aae5a", Bmd: "#4d7035",
+};
+
+function drawJadeRoof(ctx, cx, baseY, halfSpan, height) {
+  const C = HOUSE_C;
+  for (let dy = 0; dy < height; dy++) {
+    const t = dy / Math.max(1, height - 1);
+    const w = Math.max(2, Math.round(halfSpan * (0.20 + 0.80 * t)));
+    const y = baseY - height + dy;
+    pxRect(ctx, cx - w - 1, y, 1, 1, C.o);
+    pxRect(ctx, cx + w, y, 1, 1, C.o);
+    pxRect(ctx, cx - w, y, w * 2, 1, C.J);
+    if (dy % 2 === 0) {
+      for (let x = cx - w + 1; x < cx + w; x += 4) px(ctx, x, y, C.j);
+    }
+    if (dy === 0) pxRect(ctx, cx - w, y, w * 2, 1, C.L);
+    if (dy === height - 1) pxRect(ctx, cx - w, y, w * 2, 1, C.j);
+  }
+  const eaveY = baseY - 1;
+  pxRect(ctx, cx - halfSpan - 2, eaveY, 1, 1, C.j);
+  pxRect(ctx, cx - halfSpan - 3, eaveY - 1, 1, 1, C.J);
+  pxRect(ctx, cx - halfSpan - 2, eaveY - 2, 1, 1, C.L);
+  pxRect(ctx, cx + halfSpan + 1, eaveY, 1, 1, C.j);
+  pxRect(ctx, cx + halfSpan + 2, eaveY - 1, 1, 1, C.J);
+  pxRect(ctx, cx + halfSpan + 1, eaveY - 2, 1, 1, C.L);
+  pxRect(ctx, cx, baseY - height - 1, 1, 1, C.Yd);
+  pxRect(ctx, cx - 1, baseY - height - 2, 2, 1, C.Y);
+}
+
+function drawHangingLantern(ctx, x, y) {
+  const C = HOUSE_C;
+  pxRect(ctx, x, y, 1, 2, C.Wd);
+  pxRect(ctx, x - 1, y + 2, 3, 1, C.Yd);
+  pxRect(ctx, x - 1, y + 3, 3, 3, C.Ls);
+  pxRect(ctx, x - 1, y + 3, 1, 3, C.Ld);
+  pxRect(ctx, x - 1, y + 3, 3, 1, C.Lt);
+  pxRect(ctx, x - 1, y + 6, 3, 1, C.Yd);
+  pxRect(ctx, x, y + 7, 1, 1, C.Y);
+}
+
+function drawSakuraTuft(ctx, x, y) {
+  const C = HOUSE_C;
+  pxRect(ctx, x, y, 1, 1, C.Skd);
+  pxRect(ctx, x + 1, y - 1, 2, 1, C.Sk);
+  pxRect(ctx, x - 1, y, 1, 1, C.Sk);
+  pxRect(ctx, x + 2, y + 1, 1, 1, C.Sk);
+  pxRect(ctx, x, y + 1, 1, 1, C.Skd);
+}
+
+function drawStonePlinth(ctx, cx, y, half, depth) {
+  const C = HOUSE_C;
+  for (let i = 0; i < depth; i++) {
+    pxRect(ctx, cx - half - 1, y + i, 1, 1, C.o);
+    pxRect(ctx, cx + half, y + i, 1, 1, C.o);
+    pxRect(ctx, cx - half, y + i, half * 2, 1, i === 0 ? C.S : C.Sd);
+    if (i === 0) {
+      for (let x = cx - half + 2; x < cx + half; x += 4) px(ctx, x, y, C.Sd);
+    }
+  }
+}
+
+function drawHouseWalls(ctx, cx, top, halfSpan, height, opts = {}) {
+  const C = HOUSE_C;
+  const left = cx - halfSpan;
+  const right = cx + halfSpan;
+  pxRect(ctx, left - 1, top, 1, height, C.o);
+  pxRect(ctx, right, top, 1, height, C.o);
+  pxRect(ctx, left, top, halfSpan * 2, height, C.W);
+  pxRect(ctx, left, top, halfSpan * 2, 1, C.w);
+  pxRect(ctx, left - 1, top + height, halfSpan * 2 + 2, 1, C.o);
+  for (let x = left + 1; x < right; x += 5) {
+    pxRect(ctx, x, top + 1, 1, height - 2, C.X);
+  }
+  const doorW = opts.doorW || 4;
+  const doorH = opts.doorH || 6;
+  const doorX = cx - Math.floor(doorW / 2);
+  const doorY = top + height - doorH;
+  pxRect(ctx, doorX - 1, doorY, doorW + 2, doorH, C.o);
+  pxRect(ctx, doorX, doorY, doorW, doorH, C.D);
+  pxRect(ctx, doorX, doorY, doorW, 1, C.Yd);
+  pxRect(ctx, cx, doorY + Math.floor(doorH / 2), 1, 1, C.Y);
+  if (opts.windows !== false) {
+    const winY = top + 2;
+    const winXs = [cx - halfSpan + 3, cx + halfSpan - 5];
+    for (const wx of winXs) {
+      pxRect(ctx, wx - 1, winY - 1, 5, 1, C.o);
+      pxRect(ctx, wx - 1, winY + 3, 5, 1, C.o);
+      pxRect(ctx, wx - 1, winY, 1, 3, C.o);
+      pxRect(ctx, wx + 3, winY, 1, 3, C.o);
+      pxRect(ctx, wx, winY, 3, 3, C.B);
+      pxRect(ctx, wx + 1, winY, 1, 3, C.P);
+      pxRect(ctx, wx, winY + 1, 3, 1, C.P);
+    }
+  }
+  if (opts.banner) {
+    const bx = cx - 2;
+    const by = top - 2;
+    pxRect(ctx, bx, by, 4, 5, C.R);
+    pxRect(ctx, bx, by, 4, 1, C.Rd);
+    pxRect(ctx, bx + 1, by + 2, 2, 1, C.Y);
+  }
+}
+
+function drawHousePagoda(ctx, tier) {
+  const C = HOUSE_C;
+  ctx.clearRect(0, 0, 96, 96);
+  pxRect(ctx, 8, 44, 32, 1, "rgba(36,28,20,0.32)"); // ground shadow
+
+  if (tier === 0) {
+    // Bamboo Hut
+    drawJadeRoof(ctx, 24, 22, 12, 8);
+    drawHouseWalls(ctx, 24, 22, 9, 18, { doorW: 4, doorH: 6, windows: true, banner: false });
+    drawStonePlinth(ctx, 24, 40, 11, 3);
+    pxRect(ctx, 9, 28, 1, 12, C.Bmd);
+    pxRect(ctx, 10, 28, 1, 12, C.Bm);
+    pxRect(ctx, 38, 28, 1, 12, C.Bm);
+    pxRect(ctx, 39, 28, 1, 12, C.Bmd);
+    pxRect(ctx, 8, 27, 3, 1, C.Bm);
+    pxRect(ctx, 38, 27, 3, 1, C.Bm);
+  } else if (tier === 1) {
+    // Cultivator Cottage
+    drawJadeRoof(ctx, 24, 21, 16, 11);
+    drawHouseWalls(ctx, 24, 21, 13, 18, { doorW: 5, doorH: 7, windows: true, banner: true });
+    drawStonePlinth(ctx, 24, 39, 14, 4);
+    pxRect(ctx, 8, 21, 32, 1, C.Yd);
+  } else if (tier === 2) {
+    // Courtyard House
+    drawJadeRoof(ctx, 24, 12, 9, 6);
+    drawJadeRoof(ctx, 24, 22, 18, 10);
+    drawHouseWalls(ctx, 24, 22, 15, 17, { doorW: 5, doorH: 7, windows: true, banner: true });
+    drawStonePlinth(ctx, 24, 39, 17, 4);
+    drawHangingLantern(ctx, 6, 22);
+    drawHangingLantern(ctx, 41, 22);
+    drawSakuraTuft(ctx, 4, 20);
+    drawSakuraTuft(ctx, 43, 20);
+    pxRect(ctx, 6, 22, 36, 1, C.Yd);
+    pxRect(ctx, 21, 39, 6, 1, C.S);
+    pxRect(ctx, 20, 40, 8, 1, C.S);
+  } else {
+    // Immortal Estate
+    drawJadeRoof(ctx, 24, 8, 6, 5);
+    drawJadeRoof(ctx, 24, 17, 12, 7);
+    drawJadeRoof(ctx, 24, 27, 20, 9);
+    drawHouseWalls(ctx, 24, 27, 17, 13, { doorW: 6, doorH: 8, windows: true, banner: true });
+    drawStonePlinth(ctx, 24, 40, 19, 3);
+    drawHangingLantern(ctx, 5, 27);
+    drawHangingLantern(ctx, 12, 22);
+    drawHangingLantern(ctx, 35, 22);
+    drawHangingLantern(ctx, 42, 27);
+    drawSakuraTuft(ctx, 3, 25);
+    drawSakuraTuft(ctx, 6, 30);
+    drawSakuraTuft(ctx, 41, 25);
+    drawSakuraTuft(ctx, 44, 30);
+    for (let x = 12; x < 36; x += 2) px(ctx, x, 17, C.L);
+    pxRect(ctx, 19, 40, 10, 1, C.S);
+    pxRect(ctx, 17, 41, 14, 1, C.S);
+    pxRect(ctx, 15, 42, 18, 1, C.S);
+    pxRect(ctx, 4, 27, 40, 1, C.Y);
   }
 }
 
@@ -1753,16 +1961,18 @@ function buildSprites() {
   SpriteCache["entity_merchant"] = buildBeastFrame(MERCHANT_PAL, MERCHANT);
   SpriteCache["entity_companion_partner_0"] = buildBeastFrame(PARTNER_PAL, PARTNER_0);
   SpriteCache["entity_companion_partner_1"] = buildBeastFrame(PARTNER_PAL, PARTNER_1);
+  SpriteCache["entity_companion_fox_0"] = buildBeastFrame(FOX_PAL, FOX_0);
+  SpriteCache["entity_companion_fox_1"] = buildBeastFrame(FOX_PAL, FOX_1);
 
-  // structures
-  // House: 96x96 actual = 48x48 logical.
-  const houseC = makeCanvas(96, 96);
-  drawSprite(houseC.getContext("2d"), HOUSE, HOUSE_PAL);
-  SpriteCache["struct_house"] = houseC;
-  const houseUpC = makeCanvas(96, 96);
-  drawSprite(houseUpC.getContext("2d"), HOUSE_UPGRADED, HOUSE_PAL);
-  patchUpgradedHouse(houseUpC.getContext("2d"));
-  SpriteCache["struct_house_upgraded"] = houseUpC;
+  // structures — 4 house tiers from the design deck.
+  for (let tier = 0; tier < 4; tier++) {
+    const c = makeCanvas(96, 96);
+    drawHousePagoda(c.getContext("2d"), tier);
+    SpriteCache[`struct_house_tier_${tier}`] = c;
+  }
+  // Backwards-compat aliases used by older save data + draw paths.
+  SpriteCache["struct_house"] = SpriteCache["struct_house_tier_0"];
+  SpriteCache["struct_house_upgraded"] = SpriteCache["struct_house_tier_1"];
 
   const matC = makeCanvas(TILE, TILE);
   drawSprite(matC.getContext("2d"), MAT, MAT_PAL);

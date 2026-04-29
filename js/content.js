@@ -136,12 +136,17 @@ const COMPANIONS = {
     name: "Tame Wolf", spriteKey: "beast_wolf",
     hp: 220, dmg: 22, speed: 130,
   },
+  fox_pet: {
+    name: "Spirit Fox Cub", spriteKey: "companion_fox",
+    hp: 180, dmg: 26, speed: 140,
+  },
 };
 
 const TAMEABLE = {
-  rabbit: "rabbit_pet",
-  boar:   "boar_pet",
-  wolf:   "wolf_pet",
+  rabbit:    "rabbit_pet",
+  boar:      "boar_pet",
+  wolf:      "wolf_pet",
+  huli_jing: "fox_pet",
 };
 
 // ---------- DECORATIONS ----------

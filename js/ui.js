@@ -394,7 +394,9 @@ function openBuild(state) {
   for (let i = 0; i < HOUSE_TIERS.length; i++) {
     const t = HOUSE_TIERS[i];
     const row = document.createElement("div"); row.className = "item-row";
-    row.innerHTML = `<span><b>${t.name}</b> <i style="opacity:0.6">— sleep heal ×${t.sleepHeal}, +${t.qiRegenBonus.toFixed(1)} qi/sec passive</i></span>`;
+    const flavor = t.desc ? `<br/><i style="opacity:0.55">${t.desc}</i>` : "";
+    const stats = `sleep heal ×${t.sleepHeal}, +${t.qiRegenBonus.toFixed(1)} qi/sec`;
+    row.innerHTML = `<span><b>${t.name}</b> <i style="opacity:0.6">— ${stats}</i>${flavor}</span>`;
     const btn = document.createElement("button");
     if (i <= p.houseTier) { btn.textContent = "Owned"; btn.disabled = true; }
     else if (i > p.houseTier + 1) { btn.textContent = "Locked"; btn.disabled = true; }

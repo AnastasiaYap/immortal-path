@@ -1,12 +1,46 @@
+/* Immortal Path — UI styled as a cultivator's journal.
+   Color anchors come straight from the design deck:
+     jade greens, warm woods, peach blossom, pale gold, parchment, mist blue.
+*/
+
 :root {
-  --ink: #1a1410;
-  --paper: #f3e7c9;
-  --jade: #5fae8a;
-  --jade-dark: #2f6b51;
-  --vermilion: #c43a31;
-  --gold: #d4a548;
-  --qi-blue: #6cb6ff;
-  --night: #14223a;
+  --ink:        #2a221b;
+  --ink-soft:   #4a3a2a;
+  --parchment:  #f5ecd5;
+  --parchment-2:#e9dab2;
+  --paper:      #f5ecd5;
+
+  --jade:       #5fae8a;
+  --jade-dark:  #2f6b51;
+  --jade-deep:  #1f4a36;
+  --jade-light: #b6e5b9;
+  --jade-mist:  #dff0d4;
+
+  --bamboo:     #8aae5a;
+  --bamboo-dark:#4d7035;
+
+  --wood:       #a87a48;
+  --wood-dark:  #704c25;
+  --wood-deep:  #3a2010;
+  --wood-light: #d4a675;
+
+  --gold:       #d4a548;
+  --gold-dark:  #a87b1f;
+  --gold-light: #f0c878;
+
+  --vermilion:  #c43a31;
+  --vermilion-dark:#7a1f1a;
+
+  --peach:      #f4b6c2;
+  --peach-deep: #e08aa0;
+
+  --mist:       #c8d8e8;
+  --mist-deep:  #7d9ab2;
+
+  --qi-blue:    #6cb6ff;
+  --shadow-sm:  0 2px 6px rgba(36,28,20,0.35);
+  --shadow-md:  0 6px 18px rgba(36,28,20,0.5);
+  --shadow-lg:  0 14px 36px rgba(36,28,20,0.6);
 }
 
 * { box-sizing: border-box; }
@@ -15,7 +49,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: #0c0a08;
-  color: var(--paper);
+  color: var(--parchment);
   font-family: "Georgia", "Songti SC", "STSong", serif;
   overflow: hidden;
   user-select: none;
@@ -26,8 +60,11 @@ html, body {
   width: 960px;
   height: 600px;
   margin: 0 auto;
-  border: 4px solid var(--gold);
-  box-shadow: 0 0 40px #000, inset 0 0 30px rgba(0,0,0,0.6);
+  border: 4px solid var(--jade-dark);
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 40px #000,
+    inset 0 0 30px rgba(0,0,0,0.6);
   background: #000;
 }
 
@@ -43,7 +80,10 @@ canvas#game {
   image-rendering: crisp-edges;
 }
 
-/* HUD */
+/* ============================================================
+   HUD — parchment-cards with jade frames
+   ============================================================ */
+
 #hud {
   position: absolute;
   top: 8px;
@@ -54,31 +94,33 @@ canvas#game {
   align-items: flex-start;
   pointer-events: none;
   font-size: 13px;
-  text-shadow: 1px 1px 0 #000;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
 }
 
 .bar-group { display: flex; flex-direction: column; gap: 4px; }
 
 .bar {
   position: relative;
-  width: 180px;
-  height: 16px;
-  background: rgba(0,0,0,0.55);
-  border: 1px solid var(--gold);
-  border-radius: 3px;
+  width: 192px;
+  height: 17px;
+  background: linear-gradient(180deg, rgba(245,236,213,0.92), rgba(232,220,182,0.92));
+  border: 1px solid var(--jade-dark);
+  border-radius: 9px;
   overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(212,165,72,0.6), 0 1px 2px rgba(0,0,0,0.4);
 }
 
 .bar-fill {
   height: 100%;
   width: 100%;
   transition: width 200ms ease;
+  border-radius: 8px;
 }
 
-.bar-fill.hp { background: linear-gradient(90deg, #d33, #ff7a7a); }
-.bar-fill.qi { background: linear-gradient(90deg, #2c7be0, #6cb6ff); }
-.bar-fill.stamina { background: linear-gradient(90deg, #6a9d3a, #b8e066); }
-.bar-fill.hunger { background: linear-gradient(90deg, #b8741a, #f0c068); }
+.bar-fill.hp        { background: linear-gradient(90deg, #b53a31, #ec7a70); }
+.bar-fill.qi        { background: linear-gradient(90deg, #4d8c66, #b6e5b9); }
+.bar-fill.stamina   { background: linear-gradient(90deg, #6a9d3a, #c2dc8a); }
+.bar-fill.hunger    { background: linear-gradient(90deg, #b07820, #f0c878); }
 
 .bar-label {
   position: absolute;
@@ -88,141 +130,275 @@ canvas#game {
   justify-content: center;
   font-size: 11px;
   letter-spacing: 1px;
-  color: #fff;
-  text-shadow: 1px 1px 0 #000;
+  color: var(--ink);
+  font-weight: bold;
+  text-shadow: 0 1px 0 rgba(245,236,213,0.5);
 }
 
 .info-block {
-  background: rgba(0,0,0,0.55);
-  border: 1px solid var(--gold);
-  border-radius: 4px;
-  padding: 6px 10px;
+  background: linear-gradient(180deg, rgba(245,236,213,0.92), rgba(232,220,182,0.92));
+  border: 1px solid var(--jade-dark);
+  border-radius: 6px;
+  padding: 6px 12px;
   text-align: right;
-  min-width: 200px;
+  min-width: 210px;
+  color: var(--ink);
+  box-shadow: 0 0 0 1px rgba(212,165,72,0.5), 0 2px 6px rgba(0,0,0,0.35);
+  text-shadow: none;
 }
 
-.info-block b { color: var(--gold); }
+.info-block b { color: var(--jade-deep); }
 
-/* Hotbar */
+/* ============================================================
+   Hotbar — parchment slots with jade-key labels
+   ============================================================ */
+
 #hotbar {
   position: absolute;
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: 4px;
   pointer-events: none;
 }
 
 .slot {
-  background: rgba(0,0,0,0.65);
-  border: 1px solid var(--gold);
-  padding: 4px 10px;
-  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(245,236,213,0.95), rgba(232,220,182,0.95));
+  border: 1px solid var(--jade-dark);
+  padding: 4px 10px 4px 8px;
+  border-radius: 5px;
   font-size: 12px;
-  color: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(212,165,72,0.7) inset, 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: none;
 }
 
 .slot::before {
   content: attr(data-key);
-  display: inline-block;
-  font-weight: bold;
-  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 16px;
+  padding: 0 4px;
   margin-right: 6px;
+  font-weight: bold;
+  font-size: 11px;
+  color: #fff;
+  background: linear-gradient(180deg, var(--jade), var(--jade-dark));
+  border: 1px solid var(--jade-deep);
+  border-radius: 3px;
   font-family: "Courier New", monospace;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset;
 }
 
-/* Log */
+/* ============================================================
+   Toast / log
+   ============================================================ */
+
 #log {
   position: absolute;
   bottom: 50px;
   left: 8px;
-  width: 360px;
+  width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   pointer-events: none;
   font-size: 13px;
 }
 
 .log-entry {
-  background: rgba(0,0,0,0.7);
-  border-left: 3px solid var(--gold);
-  padding: 3px 8px;
+  background: linear-gradient(180deg, rgba(245,236,213,0.95), rgba(232,220,182,0.95));
+  border-left: 4px solid var(--jade);
+  color: var(--ink);
+  padding: 4px 10px;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
   animation: fadeIn 200ms ease, fadeOut 600ms ease 4400ms forwards;
+  text-shadow: none;
 }
 
-.log-entry.bad { border-left-color: var(--vermilion); }
-.log-entry.good { border-left-color: var(--jade); }
-.log-entry.qi { border-left-color: var(--qi-blue); color: var(--qi-blue); }
+.log-entry.bad  { border-left-color: var(--vermilion); }
+.log-entry.good { border-left-color: var(--bamboo); }
+.log-entry.qi   { border-left-color: var(--qi-blue); }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; } }
 @keyframes fadeOut { to { opacity: 0; transform: translateY(-6px); } }
 
-/* Modal */
+/* ============================================================
+   Modal — parchment scroll with jade+gold double frame
+   ============================================================ */
+
 #modal {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(20, 36, 28, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 #modal.hidden { display: none; }
 
 #modal-card {
-  background: var(--paper);
+  position: relative;
+  background:
+    radial-gradient(ellipse at top left, rgba(255,255,240,0.5), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(212,165,72,0.18), transparent 60%),
+    linear-gradient(180deg, var(--parchment), var(--parchment-2));
   color: var(--ink);
-  border: 3px solid var(--gold);
-  border-radius: 6px;
-  width: 560px;
+  border: 3px solid var(--jade-dark);
+  border-radius: 8px;
+  width: 600px;
   max-height: 480px;
-  padding: 16px 20px;
-  box-shadow: 0 0 40px #000;
+  padding: 18px 22px 14px;
+  box-shadow:
+    0 0 0 1px var(--gold),
+    0 0 0 5px rgba(120, 70, 40, 0.15),
+    var(--shadow-lg);
   display: flex;
   flex-direction: column;
 }
 
+/* Decorative scroll-like end caps */
+#modal-card::before,
+#modal-card::after {
+  content: "";
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  height: 6px;
+  background: linear-gradient(180deg, var(--wood-dark), var(--wood-deep));
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--gold);
+}
+#modal-card::before { top: -10px; }
+#modal-card::after  { bottom: -10px; }
+
 #modal-title {
-  font-size: 20px;
+  position: relative;
+  font-size: 22px;
   font-weight: bold;
-  color: var(--vermilion);
-  border-bottom: 2px solid var(--gold);
-  padding-bottom: 6px;
-  margin-bottom: 10px;
+  color: var(--jade-deep);
+  letter-spacing: 2px;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* Brush-stroke underline */
+#modal-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 38%;
+  bottom: 0;
+  height: 3px;
+  background:
+    linear-gradient(90deg,
+      var(--jade-deep) 0%,
+      var(--jade) 60%,
+      rgba(95,174,138,0.0) 100%);
+  border-radius: 2px;
+  filter: blur(0.3px);
+}
+#modal-title::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, var(--vermilion) 50%, transparent 55%);
+  opacity: 0.85;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(122,31,26,0.6);
 }
 
 #modal-body {
   flex: 1;
   overflow-y: auto;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
+  padding-right: 4px;
+}
+
+#modal-body::-webkit-scrollbar { width: 8px; }
+#modal-body::-webkit-scrollbar-thumb {
+  background: var(--jade);
+  border-radius: 4px;
+}
+#modal-body::-webkit-scrollbar-track { background: rgba(212,165,72,0.18); }
+
+#modal-body h3 {
+  color: var(--jade-deep);
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  margin: 14px 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px dashed var(--jade);
+  position: relative;
+}
+
+#modal-body h3::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  background:
+    radial-gradient(circle at 35% 35%, var(--jade-light) 0%, var(--jade) 55%, var(--jade-deep) 90%);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--jade-deep);
 }
 
 #modal-body .item-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
-  border-bottom: 1px dashed #c9b994;
+  padding: 8px 10px;
+  margin: 4px 0;
+  background: rgba(186, 220, 165, 0.18);
+  border: 1px solid rgba(95, 174, 138, 0.25);
+  border-left: 4px solid var(--jade);
+  border-radius: 4px;
+  transition: background 120ms ease, border-left-color 120ms ease;
 }
 
-#modal-body .item-row:hover { background: rgba(212,165,72,0.15); }
+#modal-body .item-row:hover {
+  background: rgba(186, 220, 165, 0.30);
+  border-left-color: var(--gold);
+}
 
 #modal-body button {
-  background: var(--vermilion);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 3px 10px;
+  background: linear-gradient(180deg, var(--jade), var(--jade-dark));
+  color: #fff;
+  border: 1px solid var(--jade-deep);
+  border-radius: 4px;
+  padding: 4px 12px;
   font-size: 12px;
+  font-family: inherit;
+  font-weight: bold;
+  letter-spacing: 1px;
   cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 0 rgba(31,74,54,0.4);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+#modal-body button:hover {
+  filter: brightness(1.1);
 }
 
 #modal-body button:disabled {
-  background: #999;
+  background: linear-gradient(180deg, #b6b5af, #7a7670);
+  border-color: #5a544c;
   cursor: not-allowed;
+  box-shadow: none;
+  color: rgba(255,255,255,0.7);
 }
 
 #modal-actions {
@@ -233,34 +409,42 @@ canvas#game {
 }
 
 #modal-actions button {
-  background: var(--jade-dark);
+  background: linear-gradient(180deg, var(--vermilion), var(--vermilion-dark));
   color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 6px 12px;
+  border: 1px solid var(--vermilion-dark);
+  border-radius: 4px;
+  padding: 6px 14px;
   cursor: pointer;
   font-size: 13px;
+  font-family: inherit;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 0 rgba(60,18,16,0.45);
 }
 
 #modal-close {
   margin-top: 10px;
   align-self: flex-end;
   background: var(--ink);
-  color: var(--paper);
+  color: var(--parchment);
   border: 1px solid var(--gold);
-  border-radius: 3px;
-  padding: 4px 12px;
+  border-radius: 4px;
+  padding: 5px 14px;
   cursor: pointer;
   font-size: 12px;
+  letter-spacing: 1px;
 }
 
-/* Title */
+/* ============================================================
+   Title screen — jade-mist gradient with parchment slots
+   ============================================================ */
+
 #title-screen {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at center, rgba(40,30,20,0.85), rgba(0,0,0,0.95)),
-    repeating-linear-gradient(45deg, #1a1410 0 4px, #0c0a08 4px 8px);
+    radial-gradient(ellipse at center, rgba(95,174,138,0.32), rgba(15,30,22,0.95) 75%),
+    linear-gradient(180deg, #14322a 0%, #0a1610 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -270,45 +454,67 @@ canvas#game {
 }
 
 #title-screen h1 {
-  font-size: 56px;
-  margin: 0 0 10px;
+  font-size: 60px;
+  margin: 0 0 8px;
   color: var(--gold);
-  letter-spacing: 6px;
-  text-shadow: 0 0 20px var(--vermilion), 2px 2px 0 #000;
+  letter-spacing: 8px;
+  text-shadow:
+    0 0 24px rgba(212,165,72,0.55),
+    0 0 4px rgba(31,74,54,0.7),
+    2px 2px 0 rgba(0,0,0,0.6);
 }
 
 #title-screen .sub {
-  margin: 0 0 30px;
+  margin: 0 0 24px;
   font-style: italic;
-  color: var(--paper);
-  opacity: 0.8;
+  color: var(--jade-light);
+  opacity: 0.95;
+  letter-spacing: 1px;
 }
 
 #save-slots {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
 .save-slot {
-  background: rgba(40, 30, 20, 0.6);
-  border: 2px solid var(--gold);
-  border-radius: 4px;
-  padding: 10px 14px;
-  width: 220px;
+  background:
+    linear-gradient(180deg, rgba(245,236,213,0.95), rgba(232,220,182,0.95));
+  border: 2px solid var(--jade-dark);
+  border-radius: 6px;
+  padding: 12px 14px;
+  width: 230px;
   text-align: left;
   font-family: inherit;
-  color: var(--paper);
+  color: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  box-shadow:
+    0 0 0 1px var(--gold),
+    0 6px 18px rgba(0,0,0,0.45);
+  position: relative;
+}
+
+.save-slot::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  background:
+    radial-gradient(circle at 35% 35%, var(--jade-light) 0%, var(--jade) 55%, var(--jade-deep) 95%);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--jade-deep);
 }
 
 .save-slot .slot-title {
   font-size: 14px;
   font-weight: bold;
-  color: var(--gold);
-  letter-spacing: 1px;
+  color: var(--jade-deep);
+  letter-spacing: 2px;
 }
 
 .save-slot .slot-meta {
@@ -319,7 +525,7 @@ canvas#game {
 
 .save-slot .slot-empty {
   font-style: italic;
-  opacity: 0.6;
+  opacity: 0.55;
   font-size: 12px;
   min-height: 16px;
 }
@@ -327,51 +533,55 @@ canvas#game {
 .save-slot .slot-actions {
   display: flex;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .save-slot .slot-actions button {
   flex: 1;
-  background: linear-gradient(180deg, #c43a31, #7a1f1a);
-  color: var(--paper);
-  border: 1px solid var(--gold);
-  padding: 4px 6px;
+  background: linear-gradient(180deg, var(--jade), var(--jade-dark));
+  color: #fff;
+  border: 1px solid var(--jade-deep);
+  padding: 5px 6px;
   font-size: 11px;
   font-family: inherit;
   cursor: pointer;
   border-radius: 3px;
   letter-spacing: 1px;
+  font-weight: bold;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset;
 }
 
 .save-slot .slot-actions button.delete {
-  background: linear-gradient(180deg, #5a3a30, #2a1a18);
+  background: linear-gradient(180deg, #6a4a3a, #2a1a18);
   flex: 0;
-  padding: 4px 8px;
+  padding: 5px 9px;
 }
 
-.save-slot .slot-actions button:hover { filter: brightness(1.15); }
+.save-slot .slot-actions button:hover { filter: brightness(1.12); }
 
-.title-buttons { display: flex; gap: 12px; margin-bottom: 30px; }
+.title-buttons { display: flex; gap: 12px; margin-bottom: 24px; }
 
 .title-buttons button {
-  background: linear-gradient(180deg, #c43a31, #7a1f1a);
-  color: var(--paper);
+  background: linear-gradient(180deg, var(--vermilion), var(--vermilion-dark));
+  color: var(--parchment);
   border: 2px solid var(--gold);
-  padding: 12px 28px;
-  font-size: 16px;
+  padding: 11px 26px;
+  font-size: 15px;
   font-family: inherit;
   cursor: pointer;
   border-radius: 4px;
   letter-spacing: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.45);
 }
 
 .title-buttons button:hover { background: linear-gradient(180deg, #e04a40, #9a2a25); }
 
 .title-tip {
   font-size: 13px;
-  opacity: 0.85;
-  max-width: 500px;
+  opacity: 0.95;
+  max-width: 540px;
   line-height: 1.6;
+  color: var(--jade-light);
 }
 .title-tip p { margin: 4px 0; }
 .title-tip b { color: var(--gold); }

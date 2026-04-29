@@ -590,6 +590,7 @@ function tickCompanion(state, dt) {
 function drawCompanion(ctx, c, cam) {
   let key;
   if (c.type === "partner") key = `entity_companion_partner_${c.animFrame}`;
+  else if (c.type === "fox_pet") key = `entity_companion_fox_${c.animFrame}`;
   else key = `entity_${c.def.spriteKey}_${c.animFrame}`;
   const spr = SpriteCache[key];
   if (spr) ctx.drawImage(spr, c.x - cam.x - 16, c.y - cam.y - 22);
