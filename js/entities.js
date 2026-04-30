@@ -140,11 +140,8 @@ function drawPlayer_(ctx, player, cam) {
   let anim, animDir = player.facing;
   if (player.actionAnim) {
     anim = player.actionAnim;
-    // Down-only animations always render the down row.
-    if (anim === "meditate" || anim === "sleep" || anim === "sword_flight") animDir = "down";
   } else if (player.flying) {
     anim = "sword_flight";
-    animDir = "down";
   } else {
     anim = player.moving ? "walk" : "idle";
   }

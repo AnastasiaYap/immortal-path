@@ -86,11 +86,13 @@ function pushAnimFrames(actor, anim, parentFolder, scale, dirs) {
   }
 }
 
-// Player — full action set per the wiring patch.
-const PLAYER_4DIR_ANIMS = ["walk", "idle", "tool_swing", "sword_slash", "interact", "gift", "hurt"];
-const PLAYER_DOWN_ONLY  = ["meditate", "sleep", "sword_flight"];
-for (const a of PLAYER_4DIR_ANIMS) pushAnimFrames("player_cultivator", a, "player", 1.0);
-for (const a of PLAYER_DOWN_ONLY)  pushAnimFrames("player_cultivator", a, "player", 1.0, ["down"]);
+// Player — full action set; the sprite-anchored patch ships all 4 directions
+// for every animation (meditate/sleep/sword_flight included).
+const PLAYER_ANIMS = [
+  "walk", "idle", "tool_swing", "sword_slash", "interact",
+  "gift", "hurt", "meditate", "sleep", "sword_flight",
+];
+for (const a of PLAYER_ANIMS) pushAnimFrames("player_cultivator", a, "player", 1.0);
 
 // All 8 beasts get walk + idle + attack + hurt.
 const BEAST_ANIMS = ["walk", "idle", "attack", "hurt"];
