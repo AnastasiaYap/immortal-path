@@ -33,12 +33,12 @@ const ASSET_MAP = [
   { key: "player_right_0", path: "characters_creatures/player_cultivator_turnaround_01.png" },
   { key: "player_right_1", path: "characters_creatures/player_cultivator_turnaround_02.png" },
 
-  { key: "entity_companion_partner_0", path: "characters_creatures/alchemist_turnaround_01.png" },
-  { key: "entity_companion_partner_1", path: "characters_creatures/alchemist_turnaround_02.png" },
-  { key: "entity_companion_fox_0",     path: "characters_creatures/spirit_fox_turnaround_01.png" },
-  { key: "entity_companion_fox_1",     path: "characters_creatures/spirit_fox_turnaround_01.png" },
+  { key: "entity_companion_partner_0", path: "characters_creatures/alchemist_turnaround_01.png", scale: 0.30 },
+  { key: "entity_companion_partner_1", path: "characters_creatures/alchemist_turnaround_02.png", scale: 0.30 },
+  { key: "entity_companion_fox_0",     path: "characters_creatures/spirit_fox_turnaround_01.png", scale: 0.30 },
+  { key: "entity_companion_fox_1",     path: "characters_creatures/spirit_fox_turnaround_01.png", scale: 0.30 },
 
-  { key: "entity_merchant", path: "characters_creatures/farmer_villager_turnaround_01.png" },
+  { key: "entity_merchant", path: "characters_creatures/farmer_villager_turnaround_01.png", scale: 0.30 },
 
   { key: "entity_beast_young_dragon_0", path: "characters_creatures/baby_dragon_turnaround_a_01.png" },
   { key: "entity_beast_young_dragon_1", path: "characters_creatures/baby_dragon_turnaround_a_02.png" },

@@ -314,6 +314,125 @@ function killBeast(state, b) {
   }
 }
 
+// --- INTERIORS ---
+// A lightweight instance like a dungeon, but with no waves and no exit gate.
+// Press E on the door tile (T_PATH at {doorX, doorY}) to leave.
+
+function enterHouseInterior(state) {
+  if (state.interior || state.dungeon || state.tournament) return;
+  const W = 14, H = 10;
+  const tiles = [];
+  for (let y = 0; y < H; y++) {
+    const row = [];
+    for (let x = 0; x < W; x++) {
+      let t;
+      if (y === 0 || x === 0 || x === W - 1)         t = T_WALL;
+      else if (y === H - 1 && x !== Math.floor(W / 2)) t = T_WALL;
+      else if (y === H - 1 && x === Math.floor(W / 2)) t = T_PATH;   // door
+      else                                            t = T_WOOD;
+      row.push(t);
+    }
+    tiles.push(row);
+  }
+  const doorX = Math.floor(W / 2), doorY = H - 1;
+  // Bed and chest as nodraw structures, drawn at their tile coords.
+  const interiorWorld = {
+    tiles, plots: [],
+    structures: [
+      { id: "interior_bed",   tx: 4, ty: 4, w: 1, h: 1, type: "bed",   solid: false, _interior: true },
+      { id: "interior_chest", tx: 9, ty: 4, w: 1, h: 1, type: "chest", solid: false, _interior: true, _flavor: "house_chest" },
+    ],
+    spawn: { x: doorX * TILE + 16, y: (doorY - 1) * TILE + 16 },
+    _isInterior: "house",
+    width: W, height: H,
+    doorX, doorY,
+  };
+  state.interior = {
+    kind: "house",
+    savedWorld: state.world,
+    savedPlayer: { x: state.player.x, y: state.player.y },
+    savedBeasts: state.beasts,
+    savedFx: state.fx.slice(),
+  };
+  state.world = interiorWorld;
+  state.beasts = [];
+  state.fx = [];
+  state.player.x = interiorWorld.spawn.x;
+  state.player.y = interiorWorld.spawn.y;
+  state.player.flying = false;
+  pushLog(state, "You step inside.", "qi");
+}
+
+function tryExitInterior(state) {
+  const i = state.interior;
+  if (!i) return false;
+  const p = state.player;
+  const tx = Math.floor(p.x / TILE);
+  const ty = Math.floor(p.y / TILE);
+  if (tx === state.world.doorX && ty === state.world.doorY) {
+    exitInterior(state);
+    return true;
+  }
+  return false;
+}
+
+function exitInterior(state) {
+  const i = state.interior;
+  if (!i) return;
+  state.world = i.savedWorld;
+  state.beasts = i.savedBeasts;
+  state.fx = i.savedFx;
+  state.player.x = i.savedPlayer.x;
+  state.player.y = i.savedPlayer.y;
+  state.interior = null;
+  pushLog(state, "You step back outside.", "qi");
+}
+
+function enterMine(state) {
+  if (state.interior || state.dungeon || state.tournament) return;
+  const W = 16, H = 12;
+  const tiles = [];
+  for (let y = 0; y < H; y++) {
+    const row = [];
+    for (let x = 0; x < W; x++) {
+      let t;
+      if (y === 0 || x === 0 || x === W - 1)               t = T_STONE;
+      else if (y === H - 1 && x !== Math.floor(W / 2))     t = T_STONE;
+      else if (y === H - 1 && x === Math.floor(W / 2))     t = T_PATH;   // door
+      else                                                  t = T_DIRT;
+      row.push(t);
+    }
+    tiles.push(row);
+  }
+  // Sprinkle mineable stone outcrops in the mine interior.
+  const seeds = [[3,3],[5,2],[8,3],[11,2],[2,6],[6,5],[9,5],[12,6],[4,8],[10,8],[7,7]];
+  for (const [sx, sy] of seeds) {
+    if (tiles[sy] && tiles[sy][sx] === T_DIRT) tiles[sy][sx] = T_STONE;
+  }
+  const doorX = Math.floor(W / 2), doorY = H - 1;
+  const interiorWorld = {
+    tiles, plots: [], structures: [],
+    spawn: { x: doorX * TILE + 16, y: (doorY - 1) * TILE + 16 },
+    _isInterior: "mine",
+    width: W, height: H,
+    doorX, doorY,
+  };
+  state.interior = {
+    kind: "mine",
+    savedWorld: state.world,
+    savedPlayer: { x: state.player.x, y: state.player.y },
+    savedBeasts: state.beasts,
+    savedFx: state.fx.slice(),
+  };
+  state.world = interiorWorld;
+  state.beasts = [];
+  state.fx = [];
+  state.player.x = interiorWorld.spawn.x;
+  state.player.y = interiorWorld.spawn.y;
+  state.player.flying = false;
+  pushLog(state, "You enter the mineshaft. Veins of iron and jade glint.", "qi");
+}
+
 // --- DUNGEONS ---
 function enterDungeon(state, dungeonId) {
   if (state.dungeon) return;
@@ -827,9 +946,13 @@ function tryHarvestPlot(state) {
 
 // --- DAY ROLLOVER ---
 function nextDay(state) {
+  // If the player is sleeping inside an interior, redirect world-modifying
+  // dawn effects to the outdoor world so we don't corrupt the instance.
+  const interiorBackup = state.interior ? state.world : null;
+  if (interiorBackup) state.world = state.interior.savedWorld;
+
   state.day++;
   state.time = 0;
-  // roll weather for the new day
   state.weather = pickWeather(state.day);
   pushLog(state, `Today: ${WEATHER[state.weather].name} — ${WEATHER[state.weather].desc}`, "qi");
   // grow crops that were watered yesterday
@@ -864,12 +987,18 @@ function nextDay(state) {
   applyDecorationDawnBonus(state);
   // Heal companion fully on dawn
   if (state.companion) state.companion.hp = state.companion.hpMax;
-  // Storm has a chance to spawn a thunder-boar and drop iron from the sky
-  if (state.weather === "storm" && Math.random() < 0.7) {
+  // Storm has a chance to spawn a thunder-boar — but only when the player is
+  // actually outdoors to receive it.
+  if (!interiorBackup && state.weather === "storm" && Math.random() < 0.7) {
     spawnStormBeast(state);
   }
-  // Refresh dungeon entrance for the day
   refreshDungeonEntrance(state);
+
+  if (interiorBackup) {
+    // Commit outdoor changes back, restore the interior view for the player.
+    state.interior.savedWorld = state.world;
+    state.world = interiorBackup;
+  }
 }
 
 function applyDecorationDawnBonus(state) {

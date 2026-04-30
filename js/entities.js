@@ -22,7 +22,7 @@ function makePlayer(spawn) {
 
     money: 30,
     inventory: {},
-    seeds: { rice: 5 },
+    seeds: { rice: 5, spirit_grain: 2, blood_pepper: 1 },
 
     weaponDmg: 8,
     bonusDef: 0,            // from equipped robes

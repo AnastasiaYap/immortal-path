@@ -300,9 +300,9 @@ const BEASTS = {
 // Market prices: buying seeds and supplies.
 const SHOP_BUY = [
   { id: "rice_seed",         label: "Rice Seed",            price: 8,   give: { _seed: "rice" } },
-  { id: "spirit_grain_seed", label: "Spirit Grain Seed",    price: 30,  give: { _seed: "spirit_grain" }, unlockRealm: 1 },
-  { id: "blood_pepper_seed", label: "Blood Pepper Seed",    price: 50,  give: { _seed: "blood_pepper" }, unlockRealm: 1 },
-  { id: "qi_lotus_seed",     label: "Qi Lotus Seed",        price: 80,  give: { _seed: "qi_lotus" }, unlockRealm: 2 },
+  { id: "spirit_grain_seed", label: "Spirit Grain Seed",    price: 30,  give: { _seed: "spirit_grain" } },
+  { id: "blood_pepper_seed", label: "Blood Pepper Seed",    price: 50,  give: { _seed: "blood_pepper" } },
+  { id: "qi_lotus_seed",     label: "Qi Lotus Seed",        price: 80,  give: { _seed: "qi_lotus" }, unlockRealm: 1 },
   { id: "talisman_paper",    label: "Talisman Paper ×5",    price: 25,  give: { talisman_paper: 5 } },
   { id: "cinnabar_ink",      label: "Cinnabar Ink ×3",      price: 25,  give: { cinnabar_ink: 3 } },
   { id: "flour",             label: "Flour ×5",             price: 18,  give: { flour: 5 } },

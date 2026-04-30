@@ -172,6 +172,11 @@
     const tx = Math.floor((p.x + facingDx(p) * 16) / TILE);
     const ty = Math.floor((p.y + facingDy(p) * 16) / TILE);
 
+    // Inside a building or mine? Standing on the door tile exits.
+    if (state.interior) {
+      if (tryExitInterior(state)) return;
+    }
+
     // check structure within 1.5 tiles (nodraw structures like the bed are
     // still interactable — they just don't render).
     let nearStruct = null;
@@ -211,7 +216,10 @@
             "qi");
           return;
         case "house":
-          pushLog(state, "Press 1 near your bed to sleep.", "");
+          enterHouseInterior(state);
+          return;
+        case "mine_entrance":
+          enterMine(state);
           return;
         case "sign":
           pushLog(state, signMessage(nearStruct.label), "");
@@ -445,12 +453,15 @@
     }
     if (state.keysPressed["b"]) openBuild(state);
     if (state.keysPressed["1"]) {
-      // sleep if near bed
-      const bed = state.world.structures.find((s) => s.id === "bed");
-      const dx = (bed.tx + 0.5) * TILE - state.player.x;
-      const dy = (bed.ty + 0.5) * TILE - state.player.y;
-      if (Math.hypot(dx, dy) < TILE * 1.4) sleepInBed();
-      else pushLog(state, "Walk inside the house and find your bed.", "");
+      const bed = state.world.structures.find((s) => s.type === "bed");
+      if (!bed) {
+        pushLog(state, "There's no bed here.", "bad");
+      } else {
+        const dx = (bed.tx + 0.5) * TILE - state.player.x;
+        const dy = (bed.ty + 0.5) * TILE - state.player.y;
+        if (Math.hypot(dx, dy) < TILE * 1.4) sleepInBed();
+        else pushLog(state, "Walk to your bed first (E on house door to enter).", "");
+      }
     }
     if (state.keysPressed["tab"]) openHelp();
     state.keysPressed = {};
@@ -467,7 +478,7 @@
         state.beasts.splice(i, 1);
       }
     }
-    if (!state.dungeon && !state.tournament) maybeSpawnBeast(state, dt);
+    if (!state.dungeon && !state.tournament && !state.interior) maybeSpawnBeast(state, dt);
     tickDungeon(state, dt);
     tickTournament(state, dt);
     tickProjectiles(state, dt);
@@ -495,6 +506,7 @@
   function drawWeatherParticles() {
     const w = state.weather;
     if (!w || w === "clear") return;
+    if (state.interior) return;  // no rain or snow indoors
     // Lazy-init particle pool sized by weather kind
     let need = 0;
     switch (w) {
@@ -605,6 +617,7 @@
         case "merchant":key = "entity_merchant";bottomAnchored = true; break;
         case "sign":    key = "sign_" + s.label; break;
         case "cave":    key = "struct_cave";    bottomAnchored = true; break;
+        case "mine_entrance": key = "struct_cave"; bottomAnchored = true; break;
         case "chest":   key = "struct_chest";   break;
         case "decor":   key = "struct_" + DECORATIONS[s.decor].spriteKey; bottomAnchored = true; break;
         default: continue;
@@ -705,8 +718,19 @@
           case "mat":     label = "M: Meditate"; break;
           case "bed":     label = "1: Sleep"; break;
           case "sign":    label = "E: Read"; break;
+          case "house":   label = "E: Enter"; break;
+          case "mine_entrance": label = "E: Enter Mine"; break;
         }
         if (label) { anchor = { x: cx, y: (s.ty) * TILE }; break; }
+      }
+    }
+    if (!label && state.interior) {
+      // Inside an interior: standing on the door tile shows the exit prompt.
+      const px = Math.floor(p.x / TILE);
+      const py = Math.floor(p.y / TILE);
+      if (px === state.world.doorX && py === state.world.doorY) {
+        label = "E: Leave";
+        anchor = { x: px * TILE + 16, y: py * TILE };
       }
     }
     if (!label) {

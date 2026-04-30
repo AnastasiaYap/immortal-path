@@ -765,7 +765,7 @@ function slotKey(slot) { return SAVE_PREFIX + slot; }
 function saveGame(state, slot = activeSaveSlot) {
   // Don't autosave inside instanced encounters — would persist arena/dungeon
   // state on top of the real world and lose progress.
-  if (state.dungeon || state.tournament) return false;
+  if (state.dungeon || state.tournament || state.interior) return false;
   try {
     const data = {
       day: state.day,

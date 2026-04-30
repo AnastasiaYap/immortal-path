@@ -16,7 +16,9 @@ const T_WALL = 8;
 const T_FOREST = 9;
 const T_HERB = 10;
 
-const SOLID_TILES = new Set([T_WATER, T_WALL, T_FOREST]);
+// Trees render on top of grass but the player walks through — otherwise the
+// forest noise pattern blocks paths to herbs and beasts.
+const SOLID_TILES = new Set([T_WATER, T_WALL]);
 
 function tileSpriteKey(t) {
   switch (t) {
@@ -81,6 +83,9 @@ function makeWorld() {
       if (dx * dx + dy * dy < 22 && Math.random() < 0.7) tiles[y][x] = T_STONE;
     }
   }
+  // Carve a path tile under the mine entrance so the player can stand on it.
+  tiles[35][50] = T_PATH;
+  tiles[36][50] = T_PATH;
 
   // Path from home east to market
   for (let x = 38; x < 50; x++) {
@@ -145,6 +150,8 @@ function makeWorld() {
     { id: "forge",   tx: 30, ty: 27, w: 1, h: 1, type: "forge",   solid: false, built: false },
     { id: "loom",    tx: 32, ty: 27, w: 1, h: 1, type: "loom",    solid: false, built: false },
     { id: "merchant",tx: 51, ty: 20, w: 1, h: 1, type: "merchant",solid: false },
+    // Permanent mine entrance at the stone outcrop (south-east cluster).
+    { id: "mine",    tx: 50, ty: 35, w: 1, h: 1, type: "mine_entrance", solid: false },
     { id: "sign_farm",   tx: 23, ty: 21, w: 1, h: 1, type: "sign", label: "Farm" },
     { id: "sign_forest", tx: 30, ty: 14, w: 1, h: 1, type: "sign", label: "Forest" },
     { id: "sign_market", tx: 47, ty: 20, w: 1, h: 1, type: "sign", label: "Market" },
