@@ -72,8 +72,9 @@ const BEAST_ACTOR = {
   // young_dragon stays on the painted baby_dragon turnaround — no patch frames.
 };
 
-function pushAnimFrames(actor, anim, parentFolder, scale) {
-  for (const dir of ANIM_DIRS) {
+function pushAnimFrames(actor, anim, parentFolder, scale, dirs) {
+  const dirList = dirs || ANIM_DIRS;
+  for (const dir of dirList) {
     for (let f = 0; f < ANIM_FRAMES_PER_LOOP; f++) {
       const ff = String(f).padStart(2, "0");
       ASSET_MAP.push({
@@ -85,14 +86,16 @@ function pushAnimFrames(actor, anim, parentFolder, scale) {
   }
 }
 
-// Player walk + idle (no scale — 64x64 native is right for the chibi feel).
-pushAnimFrames("player_cultivator", "walk", "player", 1.0);
-pushAnimFrames("player_cultivator", "idle", "player", 1.0);
+// Player — full action set per the wiring patch.
+const PLAYER_4DIR_ANIMS = ["walk", "idle", "tool_swing", "sword_slash", "interact", "gift", "hurt"];
+const PLAYER_DOWN_ONLY  = ["meditate", "sleep", "sword_flight"];
+for (const a of PLAYER_4DIR_ANIMS) pushAnimFrames("player_cultivator", a, "player", 1.0);
+for (const a of PLAYER_DOWN_ONLY)  pushAnimFrames("player_cultivator", a, "player", 1.0, ["down"]);
 
-// All 8 beasts get walk + idle.
+// All 8 beasts get walk + idle + attack + hurt.
+const BEAST_ANIMS = ["walk", "idle", "attack", "hurt"];
 for (const actor of Object.values(BEAST_ACTOR)) {
-  pushAnimFrames(actor, "walk", "beasts", 1.0);
-  pushAnimFrames(actor, "idle", "beasts", 1.0);
+  for (const a of BEAST_ANIMS) pushAnimFrames(actor, a, "beasts", 1.0);
 }
 
 let assetsLoaded = false;

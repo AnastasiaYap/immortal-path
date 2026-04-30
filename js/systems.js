@@ -76,11 +76,15 @@ function aiBeast(b, player, dt) {
         const totalDef = (REALMS[player.realmIndex].def || 0) + (player.bonusDef || 0);
         const dmg = Math.max(1, baseDmg - totalDef);
         player.hp = Math.max(0, player.hp - dmg);
-        // ghosts drain qi with each strike
         if (b.drainsQi > 0) {
           player.qi = Math.max(0, player.qi - b.drainsQi);
         }
         b.attackCooldown = b.boss ? 0.7 : 0.9;
+        // Trigger anims: beast attack + player hurt.
+        if (typeof startAction === "function") {
+          startAction(b, "attack", 4, false);
+          startAction(player, "hurt", 4, false);
+        }
         return { hitPlayer: dmg };
       }
     }
@@ -213,7 +217,7 @@ function playerAttack(state) {
       b.hp -= dmg;
       gainSkill(p, "combat", 2);
       b.hitFlash = 0.15;
-      // knockback
+      if (typeof startAction === "function") startAction(b, "hurt", 4, false);
       const a = Math.atan2(dy, dx);
       b.vx += Math.cos(a) * 80;
       b.vy += Math.sin(a) * 80;
@@ -261,6 +265,7 @@ function tickProjectiles(state, dt) {
         if (b.weak && b.weak === p.kind) dmg = Math.round(dmg * 2);
         b.hp -= dmg;
         b.hitFlash = 0.15;
+        if (typeof startAction === "function") startAction(b, "hurt", 4, false);
         const fx = makeFx(b.x, b.y - 12, "damage");
         fx.amount = dmg;
         fx.life = 0.6;

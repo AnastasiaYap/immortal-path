@@ -164,27 +164,37 @@ canvas#game {
 }
 
 .slot {
+  position: relative;
   background: linear-gradient(180deg, rgba(245,236,213,0.95), rgba(232,220,182,0.95));
   border: 1px solid var(--jade-dark);
-  padding: 4px 10px 4px 8px;
+  padding: 4px 8px 4px 36px;          /* leftpad makes room for the icon */
+  min-height: 28px;
+  display: flex;
+  align-items: center;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--ink);
   box-shadow: 0 1px 0 rgba(212,165,72,0.7) inset, 0 2px 4px rgba(0,0,0,0.3);
   text-shadow: none;
+  background-repeat: no-repeat;
+  background-position: 4px center;
+  background-size: 24px 24px;
 }
 
+/* Tiny key badge in the corner so the binding stays visible. */
 .slot::before {
   content: attr(data-key);
+  position: absolute;
+  top: -6px;
+  right: -2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 16px;
-  padding: 0 4px;
-  margin-right: 6px;
+  min-width: 18px;
+  height: 14px;
+  padding: 0 3px;
   font-weight: bold;
-  font-size: 11px;
+  font-size: 10px;
   color: #fff;
   background: linear-gradient(180deg, var(--jade), var(--jade-dark));
   border: 1px solid var(--jade-deep);
@@ -192,6 +202,18 @@ canvas#game {
   font-family: "Courier New", monospace;
   box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset;
 }
+
+/* Hotbar icon backgrounds — match the design deck UI scrolls. */
+.slot.ic-portrait  { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_01.png"); }
+.slot.ic-sprout    { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_02.png"); }
+.slot.ic-can       { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_03.png"); }
+.slot.ic-basket    { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_04.png"); }
+.slot.ic-scroll    { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_05.png"); }
+.slot.ic-pouch     { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_06.png"); }
+.slot.ic-handshake { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_07.png"); }
+.slot.ic-meditate  { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_08.png"); }
+.slot.ic-map       { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_09.png"); }
+.slot.ic-gear      { background-image: url("../assets/ui_icons/hotbar_ui_icon_row_10.png"); }
 
 /* ============================================================
    Toast / log

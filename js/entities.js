@@ -108,15 +108,50 @@ function makeProjectile(x, y, vx, vy, dmg, kind = "talisman") {
   return { x, y, vx, vy, dmg, kind, life: 1.6 };
 }
 
+// Trigger a one-shot or looped action animation on a player or beast. The
+// 4-frame loop runs for `frames * ANIM_FRAME_DURATION` seconds; once it
+// expires, the renderer falls back to walk/idle.
+function startAction(entity, anim, frames = 4, looped = false) {
+  entity.actionAnim = anim;
+  entity.actionClock = 0;
+  entity.actionDuration = frames * ANIM_FRAME_DURATION;
+  entity.actionLooped = looped;
+}
+
+function tickAction(entity, dt) {
+  if (!entity.actionAnim) return;
+  entity.actionClock += dt;
+  if (!entity.actionLooped && entity.actionClock >= entity.actionDuration) {
+    entity.actionAnim = null;
+    entity.actionClock = 0;
+  }
+}
+
 function makeFx(x, y, kind) {
   return { x, y, kind, life: 0.3, t: 0 };
 }
 
 function drawPlayer_(ctx, player, cam) {
-  // Prefer the patch's 4-direction × 4-frame walk/idle animations.
-  const anim = player.moving ? "walk" : "idle";
-  const animFrame = Math.floor((player.animClock || 0) / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
-  const animKey = `anim_player_cultivator_${anim}_${player.facing}_${animFrame}`;
+  // Animation priority:
+  //   1) explicit one-shot/looped action (sword_slash, tool_swing, interact,
+  //      gift, hurt, meditate, sleep, sword_flight)
+  //   2) walking → walk
+  //   3) standing → idle
+  let anim, animDir = player.facing;
+  if (player.actionAnim) {
+    anim = player.actionAnim;
+    // Down-only animations always render the down row.
+    if (anim === "meditate" || anim === "sleep" || anim === "sword_flight") animDir = "down";
+  } else if (player.flying) {
+    anim = "sword_flight";
+    animDir = "down";
+  } else {
+    anim = player.moving ? "walk" : "idle";
+  }
+  // The action's own clock if running, else the global walk clock.
+  const clock = player.actionAnim ? player.actionClock : (player.animClock || 0);
+  const animFrame = Math.floor(clock / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
+  const animKey = `anim_player_cultivator_${anim}_${animDir}_${animFrame}`;
   const fallbackKey = `player_${player.facing}_${player.animFrame}`;
   const spr = SpriteCache[animKey] || SpriteCache[fallbackKey];
   const liftY = player.flying ? -8 - Math.sin(performance.now() / 200) * 2 : 0;
@@ -147,8 +182,11 @@ function drawPlayer_(ctx, player, cam) {
 function drawBeast_(ctx, b, cam) {
   const actor = BEAST_ACTOR[b.type];
   const moving = (Math.abs(b.vx) + Math.abs(b.vy)) > 4;
-  const anim = moving ? "walk" : "idle";
-  const animFrame = Math.floor((b.animClock || 0) / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
+  let anim;
+  if (b.actionAnim) anim = b.actionAnim;
+  else anim = moving ? "walk" : "idle";
+  const clock = b.actionAnim ? b.actionClock : (b.animClock || 0);
+  const animFrame = Math.floor(clock / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
   const facing = b.facing || "down";
   const animKey = actor ? `anim_${actor}_${anim}_${facing}_${animFrame}` : null;
   const fallbackKey = `entity_${b.def.spriteKey}_${b.animFrame}`;

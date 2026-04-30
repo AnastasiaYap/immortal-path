@@ -288,6 +288,7 @@
 
   function sleepInBed() {
     const p = state.player;
+    startAction(p, "sleep", 4, false);
     const tier = HOUSE_TIERS[p.houseTier];
     p.hp = Math.min(p.hpMax, p.hp + p.hpMax * tier.sleepHeal);
     p.qi = p.qiMax;
@@ -351,7 +352,18 @@
 
     tickNeeds(state.player, dt);
     tickFishing(state, dt);
+    tickAction(state.player, dt);
+    if (state.companion) tickAction(state.companion, dt);
+    for (const b of state.beasts) tickAction(b, dt);
     updatePlayer(dt);
+
+    // Looped state-driven anims: meditate while sitting, sleep is one-shot.
+    if (state.meditating && state.player.actionAnim !== "meditate") {
+      startAction(state.player, "meditate", 4, true);
+    }
+    if (!state.meditating && state.player.actionAnim === "meditate") {
+      state.player.actionAnim = null;
+    }
 
     // meditation
     if (state.meditating) {
@@ -364,8 +376,12 @@
     }
 
     // single-press hotkeys
-    if (state.keysPressed["e"]) interact();
+    if (state.keysPressed["e"]) {
+      startAction(state.player, "interact", 4, false);
+      interact();
+    }
     if (state.keysPressed["f"]) {
+      startAction(state.player, "sword_slash", 4, false);
       const r = playerAttack(state);
       if (r) pushLog(state, r.msg, r.kind);
     }
