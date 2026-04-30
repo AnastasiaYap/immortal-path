@@ -53,6 +53,10 @@ function aiBeast(b, player, dt) {
   b.hitFlash = Math.max(0, b.hitFlash - dt);
   b.animTimer += dt;
   if (b.animTimer > 0.25) { b.animTimer = 0; b.animFrame = 1 - b.animFrame; }
+  b.animClock = ((b.animClock || 0) + dt) % (ANIM_FRAME_DURATION * ANIM_FRAMES_PER_LOOP);
+  // Update facing from current velocity (or chase direction).
+  if (Math.abs(b.vx) > Math.abs(b.vy) + 0.01) b.facing = b.vx < 0 ? "left" : "right";
+  else if (b.vy !== 0) b.facing = b.vy < 0 ? "up" : "down";
 
   const dx = player.x - b.x;
   const dy = player.y - b.y;

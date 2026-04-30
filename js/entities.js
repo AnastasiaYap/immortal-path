@@ -113,8 +113,12 @@ function makeFx(x, y, kind) {
 }
 
 function drawPlayer_(ctx, player, cam) {
-  const key = `player_${player.facing}_${player.animFrame}`;
-  const spr = SpriteCache[key];
+  // Prefer the patch's 4-direction × 4-frame walk/idle animations.
+  const anim = player.moving ? "walk" : "idle";
+  const animFrame = Math.floor((player.animClock || 0) / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
+  const animKey = `anim_player_cultivator_${anim}_${player.facing}_${animFrame}`;
+  const fallbackKey = `player_${player.facing}_${player.animFrame}`;
+  const spr = SpriteCache[animKey] || SpriteCache[fallbackKey];
   const liftY = player.flying ? -8 - Math.sin(performance.now() / 200) * 2 : 0;
   if (player.flying) {
     ctx.fillStyle = "rgba(120, 200, 255, 0.5)";
@@ -141,8 +145,14 @@ function drawPlayer_(ctx, player, cam) {
 }
 
 function drawBeast_(ctx, b, cam) {
-  const key = `entity_${b.def.spriteKey}_${b.animFrame}`;
-  const spr = SpriteCache[key];
+  const actor = BEAST_ACTOR[b.type];
+  const moving = (Math.abs(b.vx) + Math.abs(b.vy)) > 4;
+  const anim = moving ? "walk" : "idle";
+  const animFrame = Math.floor((b.animClock || 0) / ANIM_FRAME_DURATION) % ANIM_FRAMES_PER_LOOP;
+  const facing = b.facing || "down";
+  const animKey = actor ? `anim_${actor}_${anim}_${facing}_${animFrame}` : null;
+  const fallbackKey = `entity_${b.def.spriteKey}_${b.animFrame}`;
+  const spr = (animKey && SpriteCache[animKey]) || SpriteCache[fallbackKey];
   let drawTopY = b.y - cam.y - 22;
   if (spr) {
     ctx.save();

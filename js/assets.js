@@ -49,6 +49,52 @@ const ASSET_MAP = [
   { key: "proj_talisman", path: "vfx/vfx_talismans_wind_petals_01.png", scale: SCALE_VFX },
 ];
 
+// ---------------------------------------------------------------------------
+// Walkcycle / animation patch v2 — 4-direction × 4-frame loops at 140 ms.
+// Frames are 64x64 native chibi pixel art, kept at 1.0 scale.
+// Frame keys: anim_${actor}_${anim}_${dir}_${frame}
+// ---------------------------------------------------------------------------
+
+const ANIM_FRAME_DURATION = 0.14;        // seconds per frame
+const ANIM_FRAMES_PER_LOOP = 4;
+const ANIM_DIRS = ["down", "left", "right", "up"];
+
+// Maps an in-game beast id to the patch actor folder name.
+const BEAST_ACTOR = {
+  rabbit:        "beast_spirit_rabbit",
+  boar:          "beast_tusk_boar",
+  wolf:          "beast_bamboo_wolf",
+  gui:           "beast_gui_spirit",
+  jiangshi:      "beast_jiangshi",
+  huli_jing:     "beast_huli_jing",
+  nine_tail_fox: "beast_nine_tail_fox",
+  qilin:         "beast_baby_qilin",
+  // young_dragon stays on the painted baby_dragon turnaround — no patch frames.
+};
+
+function pushAnimFrames(actor, anim, parentFolder, scale) {
+  for (const dir of ANIM_DIRS) {
+    for (let f = 0; f < ANIM_FRAMES_PER_LOOP; f++) {
+      const ff = String(f).padStart(2, "0");
+      ASSET_MAP.push({
+        key: `anim_${actor}_${anim}_${dir}_${f}`,
+        path: `animations/${parentFolder}/${actor}/${anim}/${dir}/${actor}_${anim}_${dir}_${ff}.png`,
+        scale: scale,
+      });
+    }
+  }
+}
+
+// Player walk + idle (no scale — 64x64 native is right for the chibi feel).
+pushAnimFrames("player_cultivator", "walk", "player", 1.0);
+pushAnimFrames("player_cultivator", "idle", "player", 1.0);
+
+// All 8 beasts get walk + idle.
+for (const actor of Object.values(BEAST_ACTOR)) {
+  pushAnimFrames(actor, "walk", "beasts", 1.0);
+  pushAnimFrames(actor, "idle", "beasts", 1.0);
+}
+
 let assetsLoaded = false;
 let assetsLoadStarted = false;
 

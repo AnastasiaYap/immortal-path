@@ -146,7 +146,6 @@
       const nx = p.x + dx * p.speed * speedMul * dt;
       const ny = p.y + dy * p.speed * speedMul * dt;
       if (p.flying) {
-        // Bound to map only.
         p.x = Math.max(8, Math.min(MAP_W * TILE - 8, nx));
         p.y = Math.max(8, Math.min(MAP_H * TILE - 8, ny));
       } else {
@@ -159,6 +158,8 @@
     } else {
       p.animFrame = 0;
     }
+    // Continuous animation clock for the patch's 4-frame loops.
+    p.animClock = ((p.animClock || 0) + dt) % (ANIM_FRAME_DURATION * ANIM_FRAMES_PER_LOOP);
 
     if (!moving) {
       p.stamina = Math.min(p.staminaMax, p.stamina + 4 * dt);
