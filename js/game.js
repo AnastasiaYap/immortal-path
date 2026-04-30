@@ -183,10 +183,9 @@
     let nearStructDist = Infinity;
     for (const s of state.world.structures) {
       if (s.built === false) continue;
-      const cx = (s.tx + s.w / 2) * TILE;
-      const cy = (s.ty + s.h / 2) * TILE;
+      const { cx, cy } = structAnchor(s);
       const d = Math.hypot(cx - p.x, cy - p.y);
-      if (d < TILE * 1.5 && d < nearStructDist) { nearStruct = s; nearStructDist = d; }
+      if (d < structRange(s) && d < nearStructDist) { nearStruct = s; nearStructDist = d; }
     }
     if (nearStruct) {
       switch (nearStruct.type) {
@@ -567,8 +566,29 @@
     }
   }
 
+  // Anchor for "press E to interact" — doorstep for buildings that define
+  // an interactRect, otherwise the structure footprint center.
+  function structAnchor(s) {
+    if (s.interactRect) {
+      return {
+        cx: (s.interactRect.x + s.interactRect.w / 2) * TILE,
+        cy: (s.interactRect.y + s.interactRect.h / 2) * TILE,
+      };
+    }
+    return {
+      cx: (s.tx + s.w / 2) * TILE,
+      cy: (s.ty + s.h / 2) * TILE,
+    };
+  }
+
+  function structRange(s) {
+    if (s.type === "house") return TILE * 3;
+    return TILE * 1.5;
+  }
+
   function isOnMat(state) {
     const mat = state.world.structures.find((s) => s.id === "mat");
+    if (!mat) return false;     // no mat in this world (e.g. inside the mine)
     const cx = (mat.tx + 0.5) * TILE;
     const cy = (mat.ty + 0.5) * TILE;
     return Math.hypot(cx - state.player.x, cy - state.player.y) < TILE * 0.8;
@@ -704,9 +724,8 @@
     // structure
     for (const s of state.world.structures) {
       if (s.built === false) continue;
-      const cx = (s.tx + s.w / 2) * TILE;
-      const cy = (s.ty + s.h / 2) * TILE;
-      if (Math.hypot(cx - p.x, cy - p.y) < TILE * 1.5) {
+      const { cx, cy } = structAnchor(s);
+      if (Math.hypot(cx - p.x, cy - p.y) < structRange(s)) {
         switch (s.type) {
           case "merchant": label = "E: Trade"; break;
           case "desk":    label = "E: Inscribe"; break;
@@ -721,7 +740,12 @@
           case "house":   label = "E: Enter"; break;
           case "mine_entrance": label = "E: Enter Mine"; break;
         }
-        if (label) { anchor = { x: cx, y: (s.ty) * TILE }; break; }
+        if (label) {
+          // Anchor labels near the interaction point (doorstep / footprint
+          // center) instead of the very top of the structure.
+          anchor = { x: cx, y: cy - 24 };
+          break;
+        }
       }
     }
     if (!label && state.interior) {
